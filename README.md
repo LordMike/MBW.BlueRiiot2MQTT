@@ -77,4 +77,4 @@ Adjust the logging level using this environment variable:
 Since this is a reverse engineering effort, sometimes things go wrong. To aid in troubleshooting, the requests and responses from the Blue Riiot API can be dumped to the console, by enabling trace logging.
 
 Enable request logging with this environment variable:
-> Logging__MinimumLevel__MBW.Client.BlueRiiotApi: Verbose
+> Logging__MinimumLevel__Override__MBW.Client.BlueRiiotApi: Verbose
