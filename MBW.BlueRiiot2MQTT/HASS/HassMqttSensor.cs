@@ -55,21 +55,26 @@ namespace MBW.BlueRiiot2MQTT.HASS
                 .ForContext<HassMqttSensor>();
         }
 
-        public async Task FlushIfNeeded(IMqttClient mqttClient, CancellationToken token)
+        public async Task<bool> FlushIfNeeded(IMqttClient mqttClient, CancellationToken token)
         {
+            bool anyFlushed = false;
+
             if (_discoverDirty)
             {
                 _logger.Debug("Publishing discovery doc to {topic} for {uniqueId}", _discoveryTopic, UniqueId);
                 await mqttClient.SendJsonAsync(_discoveryTopic, _discover, token);
 
                 _discoverDirty = false;
+                anyFlushed = true;
             }
 
             if (_attributesDirty)
             {
                 _logger.Debug("Publishing attributes change to {topic} for {uniqueId}", AttributesTopic, UniqueId);
                 await mqttClient.SendJsonAsync(AttributesTopic, JToken.FromObject(_attributes), token);
+                
                 _attributesDirty = false;
+                anyFlushed = true;
             }
 
             if (_valueDirty)
@@ -82,7 +87,13 @@ namespace MBW.BlueRiiot2MQTT.HASS
                     await mqttClient.SendJsonAsync(StateTopic, JToken.FromObject(_value), token);
 
                 _valueDirty = false;
+                anyFlushed = true;
             }
+
+            if (anyFlushed)
+                _logger.Information("Sent new values for {Name} to MQTT", _discover.Value<string>("name"));
+
+            return anyFlushed;
         }
 
         private static bool TryConvertValue(object val, out string str)
