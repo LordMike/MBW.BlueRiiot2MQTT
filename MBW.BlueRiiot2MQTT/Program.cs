@@ -17,7 +17,6 @@ using MQTTnet.Client;
 using MQTTnet.Client.Options;
 using Polly;
 using Serilog;
-using Serilog.Extensions.Logging;
 using WebProxy = System.Net.WebProxy;
 
 namespace MBW.BlueRiiot2MQTT
@@ -26,10 +25,10 @@ namespace MBW.BlueRiiot2MQTT
     {
         public static async Task Main(string[] args)
         {
+            // Logging to use before logging configuration is read
             Log.Logger = new LoggerConfiguration()
-                .Enrich.FromLogContext()
-                .MinimumLevel.Debug()
-                .WriteTo.Console(outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ssK} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}")
+                .MinimumLevel.Verbose()
+                .WriteTo.Console()
                 .CreateLogger();
 
             await CreateHostBuilder(args).RunConsoleAsync();
@@ -38,11 +37,16 @@ namespace MBW.BlueRiiot2MQTT
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration(builder => builder.AddJsonFile("appsettings.local.json", true))
-                .ConfigureLogging(builder => builder
-                    .ClearProviders()
-                    .AddSerilog()
-                    .AddFilter<SerilogLoggerProvider>("System.Net.Http.HttpClient.blueriiot.LogicalHandler", LogLevel.Warning)
-                    .AddFilter<SerilogLoggerProvider>("Microsoft.Extensions.Http", LogLevel.Warning))
+                .ConfigureLogging((context, builder) =>
+                {
+                    Log.Logger = new LoggerConfiguration()
+                        .ReadFrom.Configuration(context.Configuration, "Logging")
+                        .CreateLogger();
+
+                    builder
+                        .ClearProviders()
+                        .AddSerilog();
+                })
                 .ConfigureServices(ConfigureServices);
 
         private static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
@@ -132,8 +136,8 @@ namespace MBW.BlueRiiot2MQTT
 
                     SocketsHttpHandler handler = new SocketsHttpHandler();
 
-                    if (proxyConfig.UseProxy)
-                        handler.Proxy = new WebProxy(proxyConfig.ProxyUri);
+                    if (proxyConfig.Uri != null)
+                        handler.Proxy = new WebProxy(proxyConfig.Uri);
 
                     return handler;
                 })

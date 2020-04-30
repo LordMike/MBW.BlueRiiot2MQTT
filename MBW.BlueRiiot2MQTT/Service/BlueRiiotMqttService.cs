@@ -40,7 +40,16 @@ namespace MBW.BlueRiiot2MQTT.Service
             {
                 TimeSpan toDelay = _config.UpdateInterval - (DateTime.UtcNow - lastRun);
                 if (toDelay > TimeSpan.Zero)
-                    await Task.Delay(toDelay, stoppingToken);
+                {
+                    try
+                    {
+                        await Task.Delay(toDelay, stoppingToken);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        continue;
+                    }
+                }
 
                 _logger.LogDebug("Beginning update");
 
