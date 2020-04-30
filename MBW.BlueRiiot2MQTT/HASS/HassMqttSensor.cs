@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using EnumsNET;
 using MBW.BlueRiiot2MQTT.HASS.Enum;
 using MBW.BlueRiiot2MQTT.Helpers;
+using MQTTnet.Client;
 using Newtonsoft.Json.Linq;
 using Serilog;
-using uPLibrary.Networking.M2Mqtt;
 
 namespace MBW.BlueRiiot2MQTT.HASS
 {
@@ -14,8 +16,6 @@ namespace MBW.BlueRiiot2MQTT.HASS
         private readonly ILogger _logger;
         private readonly string _discoveryTopic;
         private readonly HassDeviceClass _deviceClass;
-        private readonly string _stateTopic;
-        private readonly string _attributesTopic;
 
         private JObject _discover = new JObject();
         private bool _discoverDirty = true;
@@ -28,21 +28,23 @@ namespace MBW.BlueRiiot2MQTT.HASS
 
         public string Name { get; }
         public string UniqueId { get; }
+        public string StateTopic { get; }
+        public string AttributesTopic { get; }
 
         public HassMqttSensor(string discoveryTopic, string topicPrefix, string name, string uniqueId, HassDeviceClass deviceClass)
         {
             _discoveryTopic = discoveryTopic;
             _deviceClass = deviceClass;
-            _stateTopic = topicPrefix + "/state";
-            _attributesTopic = topicPrefix + "/attr";
+            StateTopic = topicPrefix + "/state";
+            AttributesTopic = topicPrefix + "/attr";
 
             Name = name;
             UniqueId = uniqueId;
 
             _discover["name"] = Name;
             _discover["unique_id"] = UniqueId;
-            _discover["state_topic"] = _stateTopic;
-            _discover["json_attributes_topic"] = _attributesTopic;
+            _discover["state_topic"] = StateTopic;
+            _discover["json_attributes_topic"] = AttributesTopic;
             _discover["device"] = new JObject();
 
             if (_deviceClass != HassDeviceClass.None)
@@ -53,31 +55,31 @@ namespace MBW.BlueRiiot2MQTT.HASS
                 .ForContext<HassMqttSensor>();
         }
 
-        public void FlushIfNeeded(MqttClient mqttClient)
+        public async Task FlushIfNeeded(IMqttClient mqttClient, CancellationToken token)
         {
             if (_discoverDirty)
             {
                 _logger.Debug("Publishing discovery doc to {topic} for {uniqueId}", _discoveryTopic, UniqueId);
-                mqttClient.SendJson(_discoveryTopic, _discover);
+                await mqttClient.SendJsonAsync(_discoveryTopic, _discover, token);
 
                 _discoverDirty = false;
             }
 
             if (_attributesDirty)
             {
-                _logger.Debug("Publishing attributes change to {topic} for {uniqueId}", _attributesTopic, UniqueId);
-                mqttClient.SendJson(_attributesTopic, JToken.FromObject(_attributes));
+                _logger.Debug("Publishing attributes change to {topic} for {uniqueId}", AttributesTopic, UniqueId);
+                await mqttClient.SendJsonAsync(AttributesTopic, JToken.FromObject(_attributes), token);
                 _attributesDirty = false;
             }
 
             if (_valueDirty)
             {
-                _logger.Debug("Publishing state change to {topic} for {uniqueId}", _stateTopic, UniqueId);
+                _logger.Debug("Publishing state change to {topic} for {uniqueId}", StateTopic, UniqueId);
 
                 if (TryConvertValue(_value, out string str))
-                    mqttClient.SendValue(_stateTopic, str);
+                    await mqttClient.SendValueAsync(StateTopic, str, token);
                 else
-                    mqttClient.SendValue(_stateTopic, JToken.FromObject(_value));
+                    await mqttClient.SendJsonAsync(StateTopic, JToken.FromObject(_value), token);
 
                 _valueDirty = false;
             }
@@ -134,23 +136,25 @@ namespace MBW.BlueRiiot2MQTT.HASS
             return this;
         }
 
-        public void SetAttribute(string name, object value)
+        public HassMqttSensor SetAttribute(string name, object value)
         {
             if (value == default)
             {
                 if (_attributes.Remove(name))
                     _attributesDirty = true;
-
-                return;
+                
+                return this;
             }
 
             if (_attributes.TryGetValue(name, out object existing) && object.Equals(existing, value))
-                return;
+                return this;
 
             _logger.Verbose("Setting attribute {name} to {value}, for {uniqueId}", name, value, UniqueId);
 
             _attributes[name] = value;
             _attributesDirty = true;
+
+            return this;
         }
 
         public void SetValue(object value)

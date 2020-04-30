@@ -1,17 +1,22 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using MBW.Client.BlueRiiotApi.Objects;
+using MQTTnet.Client;
 
 namespace MBW.BlueRiiot2MQTT.Features
 {
     internal class FeatureUpdateManager
     {
         private readonly SensorStore _sensorStore;
+        private readonly IMqttClient _mqttClient;
         private readonly List<FeatureUpdaterBase> _updaters;
 
-        public FeatureUpdateManager(SensorStore sensorStore, IEnumerable<FeatureUpdaterBase> updaters)
+        public FeatureUpdateManager(SensorStore sensorStore, IMqttClient mqttClient, IEnumerable<FeatureUpdaterBase> updaters)
         {
             _sensorStore = sensorStore;
+            _mqttClient = mqttClient;
             _updaters = updaters.ToList();
         }
 
@@ -21,9 +26,9 @@ namespace MBW.BlueRiiot2MQTT.Features
                 updater.Update(pool, obj);
         }
 
-        public void FlushIfNeeded()
+        public Task FlushIfNeeded(CancellationToken token = default)
         {
-            _sensorStore.FlushAll();
+            return _sensorStore.FlushAll(_mqttClient, token);
         }
     }
 }

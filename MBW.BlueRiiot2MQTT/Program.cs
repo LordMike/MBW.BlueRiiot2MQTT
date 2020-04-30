@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Net;
 using System.Net.Http;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using MBW.BlueRiiot2MQTT.Configuration;
 using MBW.BlueRiiot2MQTT.Features;
@@ -11,10 +12,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using MQTTnet;
+using MQTTnet.Client;
+using MQTTnet.Client.Options;
 using Polly;
 using Serilog;
 using Serilog.Extensions.Logging;
-using uPLibrary.Networking.M2Mqtt;
+using WebProxy = System.Net.WebProxy;
 
 namespace MBW.BlueRiiot2MQTT
 {
@@ -45,30 +49,70 @@ namespace MBW.BlueRiiot2MQTT
         {
             services
                 .Configure<MqttConfiguration>(context.Configuration.GetSection("MQTT"))
-                .AddSingleton<MqttClient>(provider =>
+                .AddSingleton<IMqttFactory>(provider =>
                 {
-                    MqttConfiguration config = provider.GetOptions<MqttConfiguration>();
-                    ILogger<MqttClient> logger = provider.GetLogger<MqttClient>();
+                    ILoggerFactory loggerFactory = provider.GetRequiredService<ILoggerFactory>();
+                    ExtensionsLoggingMqttLogger logger = new ExtensionsLoggingMqttLogger(loggerFactory, "MqttNet");
+
+                    return new MqttFactory(logger);
+                })
+                .AddSingleton<HassWillContainer>()
+                .AddHostedService<HassAliveAndWillService>()
+                .AddHostedService<MqttConnectionService>()
+                .AddSingleton<MqttEvents>()
+                .AddSingleton<IMqttClientOptions>(provider =>
+                {
+                    HassWillContainer willContainer = provider.GetRequiredService<HassWillContainer>();
+                    MqttConfiguration mqttConfig = provider.GetOptions<MqttConfiguration>();
+
+                    // Prepare options
+                    MqttClientOptionsBuilder optionsBuilder = new MqttClientOptionsBuilder()
+                        .WithTcpServer(mqttConfig.Server, mqttConfig.Port)
+                        .WithCleanSession(false)
+                        .WithClientId(mqttConfig.ClientId)
+                        .WithWillMessage(new MqttApplicationMessage
+                        {
+                            Topic = willContainer.StateTopic,
+                            Payload = Encoding.UTF8.GetBytes(HassWillContainer.NotRunningMessage),
+                            Retain = true
+                        })
+                        .WithCommunicationTimeout(TimeSpan.FromSeconds(10));
+
+                    if (!string.IsNullOrEmpty(mqttConfig.Username))
+                        optionsBuilder.WithCredentials(mqttConfig.Username, mqttConfig.Password);
+
+                    return optionsBuilder.Build();
+                })
+                .AddSingleton<IMqttClient>(provider =>
+                {
+                    IHostApplicationLifetime appLifetime = provider.GetRequiredService<IHostApplicationLifetime>();
+                    CancellationToken stoppingtoken = appLifetime.ApplicationStopping;
+
+                    MqttEvents mqttEvents = provider.GetRequiredService<MqttEvents>();
 
                     // TODO: Support TLS & client certs
-                    MqttClient client = new MqttClient(config.Server, config.Port,
-                        false, MqttSslProtocols.SSLv3,
-                        (sender, certificate, chain, errors) => false,
-                        (sender, host, certificates, certificate, issuers) => null);
+                    IMqttFactory factory = provider.GetRequiredService<IMqttFactory>();
 
-                    client.ConnectionClosed += (sender, args) =>
+                    // Prepare options
+                    IMqttClientOptions options = provider.GetRequiredService<IMqttClientOptions>();
+
+                    // Create client
+                    IMqttClient mqttClient = factory.CreateMqttClient();
+
+                    // Hook up event handlers
+                    mqttClient.UseDisconnectedHandler(async args =>
                     {
-                        logger.LogWarning("MQTT connection was closed");
-                    };
+                        await mqttEvents.InvokeDisconnectHandler(args, stoppingtoken);
+                    });
+                    mqttClient.UseConnectedHandler(async args =>
+                    {
+                        await mqttEvents.InvokeConnectHandler(args, stoppingtoken);
+                    });
 
-                    // Connect with provided credentials, null values means no user/pass
-                    client.Connect(config.ClientId, config.Username, config.Password);
+                    // Connect
+                    mqttClient.ConnectAsync(options, stoppingtoken);
 
-                    // Register disconnect
-                    provider.GetRequiredService<IHostApplicationLifetime>()
-                        .ApplicationStopping.Register(o => ((MqttClient)o).Disconnect(), client);
-
-                    return client;
+                    return mqttClient;
                 });
 
             services

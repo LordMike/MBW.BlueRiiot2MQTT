@@ -55,6 +55,12 @@ namespace MBW.BlueRiiot2MQTT.HASS.Enum
         /// Datetime object or timestamp string.
         /// </summary>
         [EnumMember(Value = "timestamp")]
-        Timestamp
+        Timestamp,
+
+        /// <summary>
+        /// BinarySensor: on means problem detected, off means no problem (OK)
+        /// </summary>
+        [EnumMember(Value = "problem")]
+        Problem
     }
 }

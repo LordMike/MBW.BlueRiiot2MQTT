@@ -7,6 +7,18 @@ namespace MBW.BlueRiiot2MQTT.HASS.Enum
         None, 
 
         [EnumMember(Value = "unit_of_measurement")]
-        UnitOfMeasurement
+        UnitOfMeasurement,
+
+        [EnumMember(Value = "payload_available")]
+        PayloadAvailable,
+
+        [EnumMember(Value = "payload_not_available")]
+        PayloadNotAvailable,
+
+        [EnumMember(Value = "payload_on")]
+        PayloadOn,
+
+        [EnumMember(Value = "payload_off")]
+        PayloadOff
     }
 }

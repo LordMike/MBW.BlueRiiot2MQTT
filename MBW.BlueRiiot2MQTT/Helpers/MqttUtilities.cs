@@ -1,8 +1,12 @@
 ﻿using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using MQTTnet;
+using MQTTnet.Client;
+using MQTTnet.Protocol;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using uPLibrary.Networking.M2Mqtt;
 
 namespace MBW.BlueRiiot2MQTT.Helpers
 {
@@ -23,21 +27,28 @@ namespace MBW.BlueRiiot2MQTT.Helpers
             return ms.ToArray();
         }
 
-        public static void SendJson(this MqttClient mqttClient, string topic, JToken doc)
+        public static Task SendJsonAsync(this IMqttClient mqttClient, string topic, JToken doc, CancellationToken token = default)
         {
-            mqttClient.Publish(topic, ConvertJson(doc), 0, true);
+            return mqttClient.PublishAsync(new MqttApplicationMessage
+            {
+                Topic = topic,
+                Retain = true,
+                QualityOfServiceLevel = MqttQualityOfServiceLevel.AtLeastOnce,
+                Payload = ConvertJson(doc)
+            }, token);
         }
 
-        public static void SendValue(this MqttClient mqttClient, string topic, string value)
+        public static Task SendValueAsync(this IMqttClient mqttClient, string topic, string value, CancellationToken token = default)
         {
             byte[] bytes = Encoding.UTF8.GetBytes(value);
 
-            mqttClient.Publish(topic, bytes, 0, true);
-        }
-
-        public static void SendValue(this MqttClient mqttClient, string topic, JToken value)
-        {
-            mqttClient.Publish(topic, ConvertJson(value), 0, true);
+            return mqttClient.PublishAsync(new MqttApplicationMessage
+            {
+                Topic = topic,
+                Retain = true,
+                QualityOfServiceLevel = MqttQualityOfServiceLevel.AtLeastOnce,
+                Payload = bytes
+            }, token);
         }
     }
 }

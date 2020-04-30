@@ -9,7 +9,6 @@ using MBW.Client.BlueRiiotApi.RequestsResponses;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using uPLibrary.Networking.M2Mqtt;
 
 namespace MBW.BlueRiiot2MQTT.Service
 {
@@ -17,19 +16,17 @@ namespace MBW.BlueRiiot2MQTT.Service
     {
         private readonly ILogger<BlueRiiotMqttService> _logger;
         private readonly BlueClient _blueClient;
-        private readonly MqttClient _mqttClient;
         private readonly FeatureUpdateManager _updateManager;
         private readonly BlueRiiotConfiguration _config;
 
         public BlueRiiotMqttService(
             ILogger<BlueRiiotMqttService> logger,
             IOptions<BlueRiiotConfiguration> config,
-            BlueClient blueClient, MqttClient mqttClient,
+            BlueClient blueClient,
             FeatureUpdateManager updateManager)
         {
             _logger = logger;
             _blueClient = blueClient;
-            _mqttClient = mqttClient;
             _updateManager = updateManager;
             _config = config.Value;
         }
@@ -51,12 +48,27 @@ namespace MBW.BlueRiiot2MQTT.Service
                 {
                     await PerformUpdate(stoppingToken);
                 }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    // Do nothing
+                }
                 catch (Exception e)
                 {
                     _logger.LogError(e, "An error occurred while performing the update");
                 }
 
-                _updateManager.FlushIfNeeded();
+                try
+                {
+                    await _updateManager.FlushIfNeeded(stoppingToken);
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    // Do nothing
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "An error occurred while pushing updated data to MQTT");
+                }
 
                 lastRun = DateTime.UtcNow;
             }

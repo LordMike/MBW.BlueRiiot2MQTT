@@ -1,20 +1,20 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using MBW.BlueRiiot2MQTT.HASS;
 using MBW.BlueRiiot2MQTT.HASS.Enum;
-using uPLibrary.Networking.M2Mqtt;
+using MQTTnet.Client;
 
 namespace MBW.BlueRiiot2MQTT.Features
 {
     internal class SensorStore
     {
         private readonly HassTopicBuilder _topicBuilder;
-        private readonly MqttClient _mqttClient;
         private Dictionary<string, HassMqttSensor> _sensors;
 
-        public SensorStore(HassTopicBuilder topicBuilder, MqttClient mqttClient)
+        public SensorStore(HassTopicBuilder topicBuilder)
         {
             _topicBuilder = topicBuilder;
-            _mqttClient = mqttClient;
             _sensors = new Dictionary<string, HassMqttSensor>();
         }
 
@@ -30,10 +30,10 @@ namespace MBW.BlueRiiot2MQTT.Features
             return sensor;
         }
 
-        public void FlushAll()
+        public async Task FlushAll(IMqttClient mqttClient, CancellationToken token = default)
         {
             foreach (HassMqttSensor sensor in _sensors.Values)
-                sensor.FlushIfNeeded(_mqttClient);
+                await sensor.FlushIfNeeded(mqttClient, token);
         }
 
         public HassMqttSensor Get(string uniqueId)
