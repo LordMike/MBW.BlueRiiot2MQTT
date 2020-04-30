@@ -7,6 +7,7 @@ using MBW.BlueRiiot2MQTT.Features;
 using MBW.BlueRiiot2MQTT.HASS;
 using MBW.BlueRiiot2MQTT.Helpers;
 using MBW.BlueRiiot2MQTT.Service;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -32,6 +33,7 @@ namespace MBW.BlueRiiot2MQTT
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
+                .ConfigureAppConfiguration(builder => builder.AddJsonFile("appsettings.local.json", true))
                 .ConfigureLogging(builder => builder
                     .ClearProviders()
                     .AddSerilog()
