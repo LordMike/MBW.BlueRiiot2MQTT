@@ -1,0 +1,6 @@
+*/bin/
+*/obj/
+*/build/
+*/.vs/
+
+*/appsettings.local.json

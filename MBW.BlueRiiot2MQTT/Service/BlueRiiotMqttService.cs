@@ -71,12 +71,15 @@ namespace MBW.BlueRiiot2MQTT.Service
                 SwimmingPool pool = userPool.SwimmingPool;
                 _updateManager.Update(pool, pool);
 
+                //_logger.LogDebug("Fetching blue devices for {Id} ({Name})", pool.SwimmingPoolId, pool.Name);
+                //var blueDevices = await _blueClient.GetSwimmingPoolBlueDevices(pool.SwimmingPoolId, stoppingToken);
+
                 _logger.LogDebug("Fetching measurements for {Id} ({Name})", pool.SwimmingPoolId, pool.Name);
 
                 SwimmingPoolLastMeasurementsGetResponse measurements = await _blueClient.GetSwimmingPoolLastMeasurements(pool.SwimmingPoolId, stoppingToken);
                 _updateManager.Update(pool, measurements);
                 _updateManager.Update(pool, measurements.Data);
-                
+
                 _logger.LogDebug("Fetching weather for {Id} ({Name})", pool.SwimmingPoolId, pool.Name);
 
                 SwimmingPoolWeatherGetResponse weather = await _blueClient.GetSwimmingPoolWeather(pool.SwimmingPoolId, _config.Language, stoppingToken);
