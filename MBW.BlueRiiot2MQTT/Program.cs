@@ -79,8 +79,7 @@ namespace MBW.BlueRiiot2MQTT
                             Topic = willContainer.StateTopic,
                             Payload = Encoding.UTF8.GetBytes(HassWillContainer.NotRunningMessage),
                             Retain = true
-                        })
-                        .WithCommunicationTimeout(TimeSpan.FromSeconds(10));
+                        });
 
                     if (!string.IsNullOrEmpty(mqttConfig.Username))
                         optionsBuilder.WithCredentials(mqttConfig.Username, mqttConfig.Password);
