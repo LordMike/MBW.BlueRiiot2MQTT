@@ -83,6 +83,12 @@ namespace MBW.BlueRiiot2MQTT
 
                     if (!string.IsNullOrEmpty(mqttConfig.Username))
                         optionsBuilder.WithCredentials(mqttConfig.Username, mqttConfig.Password);
+                    
+                    if (mqttConfig.KeepAlivePeriod.HasValue)
+                        optionsBuilder.WithKeepAlivePeriod(mqttConfig.KeepAlivePeriod.Value);
+
+                    if (mqttConfig.KeepAliveSendInterval.HasValue)
+                        optionsBuilder.WithKeepAliveSendInterval(mqttConfig.KeepAliveSendInterval.Value);
 
                     return optionsBuilder.Build();
                 })
