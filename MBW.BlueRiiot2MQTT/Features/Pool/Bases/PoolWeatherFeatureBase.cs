@@ -3,7 +3,7 @@ using MBW.BlueRiiot2MQTT.HASS.Enum;
 using MBW.BlueRiiot2MQTT.Helpers;
 using MBW.Client.BlueRiiotApi.Objects;
 
-namespace MBW.BlueRiiot2MQTT.Features.Pool
+namespace MBW.BlueRiiot2MQTT.Features.Pool.Bases
 {
     internal abstract class PoolWeatherFeatureBase : FeatureUpdaterBaseTyped<SwimmingPoolWeather>
     {

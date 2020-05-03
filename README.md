@@ -10,13 +10,13 @@ This project is not affiliated with or endorsed by Blue Riiot.
   * Tracks the latest measurements for pH, temperature, Cyanuric Acid and Alkalinity
   * Tracks warning / danger levels for the measurements
   * Weather forecast, with temperature, UV index and weather type e.g. 'rain'
+  * Notifies when actions need to be done (use the Blue Riiot app to get more details on steps)
 
 Todo:
 
 * Track battery status
 * Identify MIA Blue Connects
 * Get more detailed states from Blue Connect (warnings and errors)
-* Get recommendations from Blue Riiot (put in chemicals, etc..)
 * Adjust the polling interval automatically
 
 # Setup

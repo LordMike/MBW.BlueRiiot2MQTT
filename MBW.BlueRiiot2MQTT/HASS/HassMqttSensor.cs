@@ -130,7 +130,7 @@ namespace MBW.BlueRiiot2MQTT.HASS
 
         public HassMqttSensor SetProperty(HassMqttSensorProperty property, string value)
         {
-            var propertyName = property.AsString(EnumFormat.EnumMemberValue);
+            string? propertyName = property.AsString(EnumFormat.EnumMemberValue);
 
             if (value == null)
                 _discover.Remove(propertyName);
@@ -148,7 +148,7 @@ namespace MBW.BlueRiiot2MQTT.HASS
         {
             JToken device = _discover["device"];
 
-            var propertyName = deviceProperty.AsString(EnumFormat.EnumMemberValue);
+            string? propertyName = deviceProperty.AsString(EnumFormat.EnumMemberValue);
 
             _logger.Verbose("Setting device property {name} to {value}, for {uniqueId}", propertyName, value, UniqueId);
 
@@ -168,7 +168,7 @@ namespace MBW.BlueRiiot2MQTT.HASS
                 return this;
             }
 
-            if (_attributes.TryGetValue(name, out object existing) && object.Equals(existing, value))
+            if (_attributes.TryGetValue(name, out object existing) && ComparisonHelper.IsSameValue(existing, value))
                 return this;
 
             _logger.Verbose("Setting attribute {name} to {value}, for {uniqueId}", name, value, UniqueId);
@@ -181,7 +181,7 @@ namespace MBW.BlueRiiot2MQTT.HASS
 
         public void SetValue(object value)
         {
-            if (Equals(value, _value))
+            if (ComparisonHelper.IsSameValue(value, _value))
                 return;
 
             _logger.Verbose("Setting value {value}, for {uniqueId}", value, UniqueId);

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MBW.BlueRiiot2MQTT.Configuration;
@@ -47,6 +48,7 @@ namespace MBW.BlueRiiot2MQTT.Service
                     }
                     catch (OperationCanceledException)
                     {
+                        // Do nothing
                         continue;
                     }
                 }
@@ -89,17 +91,34 @@ namespace MBW.BlueRiiot2MQTT.Service
 
             foreach (UserSwimmingPool userPool in pools.Data)
             {
+                List<SwimmingPoolLastMeasurementsGetResponse> measurements = new List<SwimmingPoolLastMeasurementsGetResponse>();
+
                 SwimmingPool pool = userPool.SwimmingPool;
                 _updateManager.Update(pool, pool);
 
-                //_logger.LogDebug("Fetching blue devices for {Id} ({Name})", pool.SwimmingPoolId, pool.Name);
-                //var blueDevices = await _blueClient.GetSwimmingPoolBlueDevices(pool.SwimmingPoolId, stoppingToken);
+                _logger.LogDebug("Fetching blue devices for {Id} ({Name})", pool.SwimmingPoolId, pool.Name);
+                SwimmingPoolBlueDevicesGetResponse blueDevices = await _blueClient.GetSwimmingPoolBlueDevices(pool.SwimmingPoolId, stoppingToken);
+
+                foreach (SwimmingPoolDevice blueDevice in blueDevices.Data)
+                {
+                    _logger.LogDebug("Fetching measurements for {Id}, blue {Serial} ({Name})", pool.SwimmingPoolId, blueDevice.BlueDeviceSerial, pool.Name);
+
+                    SwimmingPoolLastMeasurementsGetResponse blueMeasurement =  await _blueClient.GetBlueLastMeasurements(pool.SwimmingPoolId, blueDevice.BlueDeviceSerial, token: stoppingToken);
+
+                    measurements.Add(blueMeasurement);
+                }
+
+                _logger.LogDebug("Fetching guidance for {Id} ({Name})", pool.SwimmingPoolId, pool.Name);
+
+                SwimmingPoolGuidanceGetResponse guidance = await _blueClient.GetSwimmingPoolGuidance(pool.SwimmingPoolId, token: stoppingToken);
+                _updateManager.Update(pool, guidance);
 
                 _logger.LogDebug("Fetching measurements for {Id} ({Name})", pool.SwimmingPoolId, pool.Name);
 
-                SwimmingPoolLastMeasurementsGetResponse measurements = await _blueClient.GetSwimmingPoolLastMeasurements(pool.SwimmingPoolId, stoppingToken);
+                SwimmingPoolLastMeasurementsGetResponse measurement = await _blueClient.GetSwimmingPoolLastMeasurements(pool.SwimmingPoolId, stoppingToken);
+                measurements.Add(measurement);
+
                 _updateManager.Update(pool, measurements);
-                _updateManager.Update(pool, measurements.Data);
 
                 _logger.LogDebug("Fetching weather for {Id} ({Name})", pool.SwimmingPoolId, pool.Name);
 

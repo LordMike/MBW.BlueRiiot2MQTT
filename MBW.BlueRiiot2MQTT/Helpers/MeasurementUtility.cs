@@ -1,4 +1,5 @@
 ﻿using EnumsNET;
+using MBW.BlueRiiot2MQTT.Features.Enums;
 using MBW.BlueRiiot2MQTT.HASS;
 using MBW.BlueRiiot2MQTT.HASS.Enum;
 using MBW.Client.BlueRiiotApi.Objects;
@@ -15,7 +16,7 @@ namespace MBW.BlueRiiot2MQTT.Helpers
             if (measurement.WarningLow <= measurement.Value && measurement.Value <= measurement.WarningHigh)
                 return MeasurementStatus.Warning;
 
-            return MeasurementStatus.Fatal;
+            return MeasurementStatus.Bad;
         }
 
         public static void AddAttributes(HassMqttSensor sensor, SwpLastMeasurements measurement)
@@ -33,7 +34,7 @@ namespace MBW.BlueRiiot2MQTT.Helpers
             {
                 MeasurementStatus.Ok.AsString(EnumFormat.EnumMemberValue),
                 MeasurementStatus.Warning.AsString(EnumFormat.EnumMemberValue),
-                MeasurementStatus.Fatal.AsString(EnumFormat.EnumMemberValue)
+                MeasurementStatus.Bad.AsString(EnumFormat.EnumMemberValue)
             });
         }
     }

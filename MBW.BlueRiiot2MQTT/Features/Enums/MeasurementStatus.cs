@@ -1,13 +1,13 @@
 ﻿using System.Runtime.Serialization;
 
-namespace MBW.BlueRiiot2MQTT.HASS.Enum
+namespace MBW.BlueRiiot2MQTT.Features.Enums
 {
     internal enum MeasurementStatus
     {
         Unknown,
         
-        [EnumMember(Value = "fatal")]
-        Fatal,
+        [EnumMember(Value = "bad")]
+        Bad,
         
         [EnumMember(Value = "warning")]
         Warning,
