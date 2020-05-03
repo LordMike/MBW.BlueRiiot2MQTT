@@ -86,5 +86,19 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
             {
             }
         }
+
+        internal class PoolConductivityFeature : PoolMeasurementStatusFeature
+        {
+            public PoolConductivityFeature(SensorStore sensorStore) : base(sensorStore, "Conductivity", "conductivity")
+            {
+            }
+        }
+
+        internal class PoolOrpFeature : PoolMeasurementStatusFeature
+        {
+            public PoolOrpFeature(SensorStore sensorStore) : base(sensorStore, "ORP", "orp")
+            {
+            }
+        }
     }
 }
