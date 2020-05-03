@@ -15,12 +15,12 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
 
         protected override string GetUniqueId(SwimmingPool pool, SwimmingPoolLastMeasurementsGetResponse obj)
         {
-            return $"pool_{pool.SwimmingPoolId}_last_update";
+            return $"pool_{pool.SwimmingPoolId}_last_measurement";
         }
 
         protected override void CreateSensor(SwimmingPool pool, string uniqueId, SwimmingPoolLastMeasurementsGetResponse obj)
         {
-            SensorStore.Create($"{pool.Name} Last Update", uniqueId, HassDeviceType.Sensor, $"pool_{pool.SwimmingPoolId}", "last_update", HassDeviceClass.Timestamp)
+            SensorStore.Create($"{pool.Name} Last Measurement", uniqueId, HassDeviceType.Sensor, $"pool_{pool.SwimmingPoolId}", "last_measurement", HassDeviceClass.Timestamp)
                 .SetHassProperties(pool);
         }
 
