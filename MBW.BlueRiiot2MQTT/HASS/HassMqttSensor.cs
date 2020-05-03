@@ -72,7 +72,7 @@ namespace MBW.BlueRiiot2MQTT.HASS
             {
                 _logger.Debug("Publishing attributes change to {topic} for {uniqueId}", AttributesTopic, UniqueId);
                 await mqttClient.SendJsonAsync(AttributesTopic, JToken.FromObject(_attributes), token);
-                
+
                 _attributesDirty = false;
                 anyFlushed = true;
             }
@@ -119,18 +119,25 @@ namespace MBW.BlueRiiot2MQTT.HASS
 
             if (identifiers == null)
                 device["identifiers"] = identifiers = new JArray();
+            
+            _logger.Verbose("Adding device identifier {identifier} for {uniqueId}", id, UniqueId);
 
             identifiers.Add(id);
+            _discoverDirty = true;
 
             return this;
         }
 
         public HassMqttSensor SetProperty(HassMqttSensorProperty property, string value)
         {
+            var propertyName = property.AsString(EnumFormat.EnumMemberValue);
+
             if (value == null)
-                _discover.Remove(property.AsString(EnumFormat.EnumMemberValue));
+                _discover.Remove(propertyName);
             else
-                _discover[property.AsString(EnumFormat.EnumMemberValue)] = value;
+                _discover[propertyName] = value;
+
+            _logger.Verbose("Setting property {name} to {value}, for {uniqueId}", propertyName, value, UniqueId);
 
             _discoverDirty = true;
 
@@ -141,7 +148,11 @@ namespace MBW.BlueRiiot2MQTT.HASS
         {
             JToken device = _discover["device"];
 
-            device[deviceProperty.AsString(EnumFormat.EnumMemberValue)] = value;
+            var propertyName = deviceProperty.AsString(EnumFormat.EnumMemberValue);
+
+            _logger.Verbose("Setting device property {name} to {value}, for {uniqueId}", propertyName, value, UniqueId);
+
+            device[propertyName] = value;
             _discoverDirty = true;
 
             return this;
@@ -153,7 +164,7 @@ namespace MBW.BlueRiiot2MQTT.HASS
             {
                 if (_attributes.Remove(name))
                     _attributesDirty = true;
-                
+
                 return this;
             }
 
