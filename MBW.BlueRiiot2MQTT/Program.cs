@@ -36,7 +36,18 @@ namespace MBW.BlueRiiot2MQTT
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .ConfigureAppConfiguration(builder => builder.AddJsonFile("appsettings.local.json", true))
+                .ConfigureAppConfiguration(builder =>
+                {
+                    builder.AddJsonFile("appsettings.local.json", true);
+
+                    string extraConfigFile = Environment.GetEnvironmentVariable("EXTRA_CONFIG_FILE");
+
+                    if (extraConfigFile != null)
+                    {
+                        Log.Logger.Information("Loading extra config file at {path}", extraConfigFile);
+                        builder.AddJsonFile(extraConfigFile, true);
+                    }
+                })
                 .ConfigureLogging((context, builder) =>
                 {
                     Log.Logger = new LoggerConfiguration()
@@ -83,7 +94,7 @@ namespace MBW.BlueRiiot2MQTT
 
                     if (!string.IsNullOrEmpty(mqttConfig.Username))
                         optionsBuilder.WithCredentials(mqttConfig.Username, mqttConfig.Password);
-                    
+
                     if (mqttConfig.KeepAlivePeriod.HasValue)
                         optionsBuilder.WithKeepAlivePeriod(mqttConfig.KeepAlivePeriod.Value);
 
