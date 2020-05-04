@@ -1,0 +1,13 @@
+# https://hub.docker.com/_/microsoft-dotnet-core
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
+WORKDIR /src
+
+COPY . .
+WORKDIR "/src/MBW.BlueRiiot2MQTT/"
+RUN dotnet publish -c release -o /app -r linux-musl-arm64 --self-contained false
+
+# Final
+FROM mcr.microsoft.com/dotnet/core/runtime:3.1-alpine-arm64v8
+WORKDIR /app
+COPY --from=build /app .
+ENTRYPOINT ["./MBW.BlueRiiot2MQTT"]
