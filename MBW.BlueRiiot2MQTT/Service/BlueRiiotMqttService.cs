@@ -110,7 +110,7 @@ namespace MBW.BlueRiiot2MQTT.Service
 
                 _logger.LogDebug("Fetching guidance for {Id} ({Name})", pool.SwimmingPoolId, pool.Name);
 
-                SwimmingPoolGuidanceGetResponse guidance = await _blueClient.GetSwimmingPoolGuidance(pool.SwimmingPoolId, token: stoppingToken);
+                SwimmingPoolGuidanceGetResponse guidance = await _blueClient.GetSwimmingPoolGuidance(pool.SwimmingPoolId, _config.Language, token: stoppingToken);
                 _updateManager.Update(pool, guidance);
 
                 _logger.LogDebug("Fetching measurements for {Id} ({Name})", pool.SwimmingPoolId, pool.Name);
