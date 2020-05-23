@@ -1,7 +1,6 @@
 ﻿using EnumsNET;
 using MBW.BlueRiiot2MQTT.Features.Enums;
 using MBW.BlueRiiot2MQTT.HASS;
-using MBW.BlueRiiot2MQTT.HASS.Enum;
 using MBW.Client.BlueRiiotApi.Objects;
 
 namespace MBW.BlueRiiot2MQTT.Helpers
