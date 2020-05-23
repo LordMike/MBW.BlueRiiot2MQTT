@@ -100,5 +100,26 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
             {
             }
         }
+
+        internal class PoolSalinityFeature : PoolMeasurementStatusFeature
+        {
+            public PoolSalinityFeature(SensorStore sensorStore) : base(sensorStore, "Salinity", "salinity")
+            {
+            }
+        }
+
+        internal class PoolFreeChlorineFeature : PoolMeasurementStatusFeature
+        {
+            public PoolFreeChlorineFeature(SensorStore sensorStore) : base(sensorStore, "Free Chlorine", "fcl")
+            {
+            }
+        }
+
+        internal class PoolFreeBromineFeature : PoolMeasurementStatusFeature
+        {
+            public PoolFreeBromineFeature(SensorStore sensorStore) : base(sensorStore, "Free Bromine", "fbr")
+            {
+            }
+        }
     }
 }
