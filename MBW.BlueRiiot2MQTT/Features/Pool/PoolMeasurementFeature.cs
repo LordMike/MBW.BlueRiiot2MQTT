@@ -108,7 +108,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
 
         internal class PoolSalinityFeature : PoolMeasurementFeature
         {
-            public PoolSalinityFeature(SensorStore sensorStore) : base(sensorStore, "Salinity", "salinity", "mg/L")
+            public PoolSalinityFeature(SensorStore sensorStore) : base(sensorStore, "Salinity", "salinity", "g/L")
             {
             }
         }
