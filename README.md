@@ -39,6 +39,8 @@ Todo:
 | BlueRiiot__Language | | `en` | Language for the API. Used for messages from BlueRiiot |
 | Proxy__Uri | | | Set this to pass BlueRiiot API calls through an HTTP proxy |
 
+# Docker images
+
 ## Run in Docker CLI
 
 > docker run -d -e MQTT__Server=myqueue.local -e BlueRiiot__Username=myuser -e BlueRiiot__Password=mypassword lordmike/blueriiot2mqtt:latest
@@ -57,6 +59,18 @@ services:
       BlueRiiot__Username: myuser
       BlueRiiot__Password: mypassword
 ```
+
+## Available tags
+
+You can use one of the following tags. Architectures available: `amd64`, `armv7` and `aarch64`
+
+* `latest` (latest, multi-arch)
+* `ARCH-latest` (latest, specific architecture)
+* `vA.B.C` (specific version, multi-arch)
+* `ARCH-vA.B.C` (specific version, specific architecture)
+
+For all available tags, see [Docker Hub](https://hub.docker.com/repository/docker/lordmike/blueriiot2mqtt/tags).
+
 
 # How
 
