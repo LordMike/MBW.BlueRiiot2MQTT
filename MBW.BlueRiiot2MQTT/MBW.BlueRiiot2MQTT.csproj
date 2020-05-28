@@ -3,8 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <Version>0.1.4</Version>
-  </PropertyGroup>
+    <Version>0.2.0</Version>
+  </PropertyGroup>  
 
   <ItemGroup>
     <PackageReference Include="AwsSignatureVersion4" Version="1.2.0" />
