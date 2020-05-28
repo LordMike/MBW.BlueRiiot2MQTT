@@ -35,7 +35,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
                 return;
             }
 
-            string text = guidance.Guidance.IssueToFix.IssueTitle + ": " + guidance.Guidance.IssueToFix.ActionTitle; 
+            string text = guidance.Guidance.IssueToFix?.IssueTitle + ": " + guidance.Guidance.IssueToFix?.ActionTitle; 
 
             sensor.SetValue(text);
             sensor.SetAttribute("status", "alert");
