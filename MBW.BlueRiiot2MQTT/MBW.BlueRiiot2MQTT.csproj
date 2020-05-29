@@ -3,14 +3,14 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <Version>0.2.1</Version>
-  </PropertyGroup>  
+    <Version>0.2.2</Version>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="AwsSignatureVersion4" Version="1.2.0" />
     <PackageReference Include="Enums.NET" Version="3.0.3" />
     <PackageReference Include="JetBrains.Annotations" Version="2020.1.0" />
-    <PackageReference Include="MBW.Client.BlueRiiotAPI" Version="0.4.0" /> 
+    <PackageReference Include="MBW.Client.BlueRiiotAPI" Version="0.4.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.3" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.3" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="3.1.3" />

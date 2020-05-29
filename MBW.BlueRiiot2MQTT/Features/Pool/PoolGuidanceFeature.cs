@@ -27,7 +27,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
         {
             HassMqttSensor sensor = SensorStore.Get(uniqueId);
 
-            if (guidance.Guidance == null)
+            if (guidance.Guidance?.IssueToFix == null)
             {
                 sensor.SetValue("No guidance at this time");
                 sensor.SetAttribute("status", "ok");
@@ -35,7 +35,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
                 return;
             }
 
-            string text = guidance.Guidance.IssueToFix?.IssueTitle + ": " + guidance.Guidance.IssueToFix?.ActionTitle; 
+            string text = guidance.Guidance.IssueToFix.IssueTitle + ": " + guidance.Guidance.IssueToFix.ActionTitle; 
 
             sensor.SetValue(text);
             sensor.SetAttribute("status", "alert");
