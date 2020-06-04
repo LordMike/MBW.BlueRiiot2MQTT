@@ -98,9 +98,6 @@ namespace MBW.BlueRiiot2MQTT
                     if (mqttConfig.KeepAlivePeriod.HasValue)
                         optionsBuilder.WithKeepAlivePeriod(mqttConfig.KeepAlivePeriod.Value);
 
-                    if (mqttConfig.KeepAliveSendInterval.HasValue)
-                        optionsBuilder.WithKeepAliveSendInterval(mqttConfig.KeepAliveSendInterval.Value);
-
                     return optionsBuilder.Build();
                 })
                 .AddSingleton<IMqttClient>(provider =>
