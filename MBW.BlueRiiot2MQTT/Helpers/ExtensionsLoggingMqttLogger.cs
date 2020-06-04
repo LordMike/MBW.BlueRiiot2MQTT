@@ -4,6 +4,9 @@ using MQTTnet.Diagnostics;
 
 namespace MBW.BlueRiiot2MQTT.Helpers
 {
+    /// <summary>
+    /// Logging class to map between <see cref="IMqttNetLogger"/>, <see cref="IMqttNetScopedLogger"/> and <see cref="ILogger"/>
+    /// </summary>
     class ExtensionsLoggingMqttLogger : IMqttNetLogger, IMqttNetScopedLogger
     {
         private readonly ILoggerFactory _loggerFactory;
