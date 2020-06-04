@@ -4,7 +4,7 @@ using MQTTnet.Diagnostics;
 
 namespace MBW.BlueRiiot2MQTT.Helpers
 {
-    class ExtensionsLoggingMqttLogger : IMqttNetLogger
+    class ExtensionsLoggingMqttLogger : IMqttNetLogger, IMqttNetScopedLogger
     {
         private readonly ILoggerFactory _loggerFactory;
         private readonly ILogger _logger;
@@ -17,13 +17,17 @@ namespace MBW.BlueRiiot2MQTT.Helpers
             _logger = loggerFactory.CreateLogger(source);
         }
 
-
-        public IMqttNetLogger CreateChildLogger(string source)
+        public IMqttNetScopedLogger CreateScopedLogger(string source)
         {
             return new ExtensionsLoggingMqttLogger(_loggerFactory, $"{_source}.{source}");
         }
 
         public void Publish(MqttNetLogLevel logLevel, string message, object[] parameters, Exception exception)
+        {
+            Publish(logLevel, _source, message, parameters, exception);
+        }
+
+        public void Publish(MqttNetLogLevel logLevel, string source, string message, object[] parameters, Exception exception)
         {
             LogLevel level;
             switch (logLevel)
