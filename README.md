@@ -1,8 +1,10 @@
 # BlueRiiot2MQTT
 
-This is a proxy application to translate the status of a Blue Riiot pool manager, to Home Assistant using MQTT. You can run this application in docker, and it will periodically poll the Blue Riiot API for updates.
+![logo](Logo/Logo.png)
 
-This project is not affiliated with or endorsed by Blue Riiot.
+This is a proxy application to translate the status of a Blue Riiot pool manager, to Home Assistant using MQTT_. You can run this application in docker, and it will periodically poll the Blue Riiot API for updates.
+
+_This project is not affiliated with or endorsed by Blue Riiot._
 
 # Features
 
