@@ -39,7 +39,7 @@ jobs:
       
     - name: Create manifest images + tag images
       run: |
-        # Note: Manifests are created from tags from docker.io, so we must push firsth, then create manifest, then push again
+        # Note: Manifests are created from tags from docker.io, so we must push first, then create manifest, then push again
         docker manifest create lordmike/blueriiot2mqtt:latest \
           lordmike/blueriiot2mqtt:amd64-latest \
           lordmike/blueriiot2mqtt:armv7-latest \

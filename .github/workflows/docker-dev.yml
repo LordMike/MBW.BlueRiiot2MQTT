@@ -1,0 +1,42 @@
+name: Docker build and push
+
+on:
+  push:
+    branches: master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Prep docker experimentals
+      run: echo ::set-env name=DOCKER_CLI_EXPERIMENTAL::enabled
+    
+    - name: Prep GIT_TAG
+      run: echo ::set-env name=GIT_TAG::${GITHUB_REF#refs/*/}
+    
+    - uses: actions/checkout@v2
+    
+    - name: Build
+      run: |
+        docker build -f MBW.BlueRiiot2MQTT/Dockerfile.amd64 -t lordmike/blueriiot2mqtt:amd64-dev .
+        docker build -f MBW.BlueRiiot2MQTT/Dockerfile.armv7 -t lordmike/blueriiot2mqtt:armv7-dev .
+        docker build -f MBW.BlueRiiot2MQTT/Dockerfile.aarch64 -t lordmike/blueriiot2mqtt:aarch64-dev .
+    
+    - name: Push base images to docker hub
+      run: |
+        echo ${{ secrets.docker_token }} | docker login -u ${{ secrets.docker_username }} --password-stdin
+        
+        docker push lordmike/blueriiot2mqtt:amd64-dev
+        docker push lordmike/blueriiot2mqtt:armv7-dev
+        docker push lordmike/blueriiot2mqtt:aarch64-dev
+      
+    - name: Create manifest images + tag images
+      run: |
+        # Note: Manifests are created from tags from docker.io, so we must push first, then create manifest, then push again
+        docker manifest create lordmike/blueriiot2mqtt:dev \
+          lordmike/blueriiot2mqtt:amd64-dev \
+          lordmike/blueriiot2mqtt:armv7-dev \
+          lordmike/blueriiot2mqtt:aarch64-dev
+        
+        docker manifest push lordmike/blueriiot2mqtt:dev
