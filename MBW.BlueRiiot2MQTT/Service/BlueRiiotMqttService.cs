@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -91,6 +91,12 @@ namespace MBW.BlueRiiot2MQTT.Service
 
             foreach (UserSwimmingPool userPool in pools.Data)
             {
+                if (userPool.SwimmingPool == null)
+                {
+                    _logger.LogWarning("Identified an incomplete pool, {name}, maybe it's new and not ready yet", userPool.Name);
+                    continue;
+                }
+
                 List<SwimmingPoolLastMeasurementsGetResponse> measurements = new List<SwimmingPoolLastMeasurementsGetResponse>();
 
                 SwimmingPool pool = userPool.SwimmingPool;
@@ -103,7 +109,7 @@ namespace MBW.BlueRiiot2MQTT.Service
                 {
                     _logger.LogDebug("Fetching measurements for {Id}, blue {Serial} ({Name})", pool.SwimmingPoolId, blueDevice.BlueDeviceSerial, pool.Name);
 
-                    SwimmingPoolLastMeasurementsGetResponse blueMeasurement =  await _blueClient.GetBlueLastMeasurements(pool.SwimmingPoolId, blueDevice.BlueDeviceSerial, token: stoppingToken);
+                    SwimmingPoolLastMeasurementsGetResponse blueMeasurement = await _blueClient.GetBlueLastMeasurements(pool.SwimmingPoolId, blueDevice.BlueDeviceSerial, token: stoppingToken);
 
                     measurements.Add(blueMeasurement);
                 }
