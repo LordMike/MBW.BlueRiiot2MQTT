@@ -31,6 +31,8 @@ namespace MBW.BlueRiiot2MQTT.HASS
         public string StateTopic { get; }
         public string AttributesTopic { get; }
 
+        public bool EnableReportingUnchangedValues { get; set; }
+
         public HassMqttSensor(string discoveryTopic, string topicPrefix, string name, string uniqueId, HassDeviceClass deviceClass)
         {
             _discoveryTopic = discoveryTopic;
@@ -168,7 +170,8 @@ namespace MBW.BlueRiiot2MQTT.HASS
                 return this;
             }
 
-            if (_attributes.TryGetValue(name, out object existing) && ComparisonHelper.IsSameValue(existing, value))
+            // If EnableReportingUnchangedValues is set, always move forward
+            if (!EnableReportingUnchangedValues && _attributes.TryGetValue(name, out object existing) && ComparisonHelper.IsSameValue(existing, value))
                 return this;
 
             _logger.Verbose("Setting attribute {name} to {value}, for {uniqueId}", name, value, UniqueId);
@@ -181,7 +184,8 @@ namespace MBW.BlueRiiot2MQTT.HASS
 
         public void SetValue(object value)
         {
-            if (ComparisonHelper.IsSameValue(value, _value))
+            // If EnableReportingUnchangedValues is set, always move forward
+            if (!EnableReportingUnchangedValues && ComparisonHelper.IsSameValue(value, _value))
                 return;
 
             _logger.Verbose("Setting value {value}, for {uniqueId}", value, UniqueId);
