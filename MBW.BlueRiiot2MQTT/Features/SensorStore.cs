@@ -28,8 +28,7 @@ namespace MBW.BlueRiiot2MQTT.Features
             string topicPrefix = _topicBuilder.GetDeviceTopicPrefix(deviceType, deviceId, entityId);
 
             HassMqttSensor sensor = new HassMqttSensor(discoveryTopic, topicPrefix, name, uniqueId, deviceClass);
-
-            sensor.ReportUnchangedValues = _blueRiiotConfiguration.ReportUnchangedValues;
+            sensor.EnableReportingUnchangedValues = _blueRiiotConfiguration.ReportUnchangedValues;
 
             _sensors.Add(uniqueId, sensor);
 
