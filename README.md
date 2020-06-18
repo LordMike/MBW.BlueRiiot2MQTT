@@ -39,6 +39,7 @@ Todo:
 | BlueRiiot__Password | yes | | |
 | BlueRiiot__UpdateInterval | | 01:00:00 | Update interval, default: `1 hour` |
 | BlueRiiot__Language | | `en` | Language for the API. Used for messages from BlueRiiot |
+| BlueRiiot__ReportUnchangedValues | | `false` | Send unchanged values |
 | Proxy__Uri | | | Set this to pass BlueRiiot API calls through an HTTP proxy |
 
 # Docker images
