@@ -3,7 +3,9 @@
 
 ![logo](Logo/Logo.png)
 
-This is a proxy application to translate the status of a Blue Riiot pool manager, to Home Assistant using MQTT_. You can run this application in docker, and it will periodically poll the Blue Riiot API for updates.
+This is a proxy application to translate the status of a Blue Riiot pool manager, to Home Assistant using MQTT. You can run this application in docker, and it will periodically poll the Blue Riiot API for updates.
+
+This project uses another library of mine, the [MBW.Client.BlueRiiotApi](https://github.com/LordMike/MBW.Client.BlueRiiotApi) ([nuget](https://www.nuget.org/packages/MBW.Client.BlueRiiotAPI)).
 
 _This project is not affiliated with or endorsed by Blue Riiot._
 
