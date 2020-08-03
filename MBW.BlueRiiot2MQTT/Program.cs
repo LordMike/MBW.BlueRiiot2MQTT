@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Net.Http;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using MBW.BlueRiiot2MQTT.Configuration;
 using MBW.BlueRiiot2MQTT.Features;
-using MBW.BlueRiiot2MQTT.HASS;
 using MBW.BlueRiiot2MQTT.Helpers;
 using MBW.BlueRiiot2MQTT.Service;
+using MBW.HassMQTT;
+using MBW.HassMQTT.CommonServices.AliveAndWill;
+using MBW.HassMQTT.CommonServices.MqttReconnect;
+using MBW.HassMQTT.Extensions;
+using MBW.HassMQTT.Topics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -64,20 +67,9 @@ namespace MBW.BlueRiiot2MQTT
         {
             services
                 .Configure<MqttConfiguration>(context.Configuration.GetSection("MQTT"))
-                .AddSingleton<IMqttFactory>(provider =>
-                {
-                    ILoggerFactory loggerFactory = provider.GetRequiredService<ILoggerFactory>();
-                    ExtensionsLoggingMqttLogger logger = new ExtensionsLoggingMqttLogger(loggerFactory, "MqttNet");
-
-                    return new MqttFactory(logger);
-                })
-                .AddSingleton<HassWillContainer>()
-                .AddHostedService<HassAliveAndWillService>()
-                .AddHostedService<MqttConnectionService>()
-                .AddSingleton<MqttEvents>()
+                .AddMqttClientFactoryWithLogging()
                 .AddSingleton<IMqttClientOptions>(provider =>
                 {
-                    HassWillContainer willContainer = provider.GetRequiredService<HassWillContainer>();
                     MqttConfiguration mqttConfig = provider.GetOptions<MqttConfiguration>();
 
                     // Prepare options
@@ -85,12 +77,7 @@ namespace MBW.BlueRiiot2MQTT
                         .WithTcpServer(mqttConfig.Server, mqttConfig.Port)
                         .WithCleanSession(false)
                         .WithClientId(mqttConfig.ClientId)
-                        .WithWillMessage(new MqttApplicationMessage
-                        {
-                            Topic = willContainer.StateTopic,
-                            Payload = Encoding.UTF8.GetBytes(HassWillContainer.NotRunningMessage),
-                            Retain = true
-                        });
+                        .ConfigureHassConnectedEntityServiceLastWill(provider);
 
                     if (!string.IsNullOrEmpty(mqttConfig.Username))
                         optionsBuilder.WithCredentials(mqttConfig.Username, mqttConfig.Password);
@@ -102,41 +89,46 @@ namespace MBW.BlueRiiot2MQTT
                 })
                 .AddSingleton<IMqttClient>(provider =>
                 {
+                    // TODO: Support TLS & client certs
                     IHostApplicationLifetime appLifetime = provider.GetRequiredService<IHostApplicationLifetime>();
                     CancellationToken stoppingtoken = appLifetime.ApplicationStopping;
 
-                    MqttEvents mqttEvents = provider.GetRequiredService<MqttEvents>();
-
-                    // TODO: Support TLS & client certs
                     IMqttFactory factory = provider.GetRequiredService<IMqttFactory>();
-
-                    // Prepare options
                     IMqttClientOptions options = provider.GetRequiredService<IMqttClientOptions>();
-
-                    // Create client
                     IMqttClient mqttClient = factory.CreateMqttClient();
 
                     // Hook up event handlers
-                    mqttClient.UseDisconnectedHandler(async args =>
-                    {
-                        await mqttEvents.InvokeDisconnectHandler(args, stoppingtoken);
-                    });
-                    mqttClient.UseConnectedHandler(async args =>
-                    {
-                        await mqttEvents.InvokeConnectHandler(args, stoppingtoken);
-                    });
+                    mqttClient.ConfigureMqttEvents(provider, stoppingtoken);
 
                     // Connect
                     mqttClient.ConnectAsync(options, stoppingtoken);
 
                     return mqttClient;
                 });
+            
+            // MQTT Services
+            services
+                .AddMqttMessageReceiverService()
+                .AddMqttEvents();
+
+            // MQTT Reconnect service
+            services
+                .AddMqttReconnectService()
+                .Configure<MqttReconnectionServiceConfig>(context.Configuration.GetSection("MQTT"));
+
+            // Hass Connected service (MQTT Last Will)
+            services
+                .AddHassConnectedEntityService("BlueRiiot2MQTT");
+            
+            // Hass system services
+            services
+                .AddSingleton<HassMqttManager>();
 
             services
                 .Configure<HassConfiguration>(context.Configuration.GetSection("HASS"))
                 .Configure<BlueRiiotConfiguration>(context.Configuration.GetSection("BlueRiiot"))
                 .Configure<ProxyConfiguration>(context.Configuration.GetSection("Proxy"))
-                .AddSingleton<HassTopicBuilder>()
+                .AddSingleton(x => new HassMqttTopicBuilder(x.GetOptions<HassConfiguration>()))
                 .AddHttpClient("blueriiot")
                 .AddTransientHttpErrorPolicy(builder => builder.WaitAndRetryAsync(new[]
                 {
@@ -164,9 +156,8 @@ namespace MBW.BlueRiiot2MQTT
                         .UseUsernamePassword(config.Username, config.Password)
                         .UseHttpClientFactory(httpFactory, "blueriiot");
                 });
-
+            
             services
-                .AddSingleton<SensorStore>()
                 .AddAllFeatureUpdaters()
                 .AddSingleton<FeatureUpdateManager>()
                 .AddHostedService<BlueRiiotMqttService>();

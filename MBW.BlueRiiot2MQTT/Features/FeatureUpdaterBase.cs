@@ -1,16 +1,17 @@
 ﻿using JetBrains.Annotations;
 using MBW.Client.BlueRiiotApi.Objects;
+using MBW.HassMQTT;
 
 namespace MBW.BlueRiiot2MQTT.Features
 {
-    [UsedImplicitly(ImplicitUseTargetFlags.WithInheritors)]
+    [UsedImplicitly]
     internal abstract class FeatureUpdaterBase
     {
-        protected SensorStore SensorStore { get; }
+        protected HassMqttManager HassMqttManager { get; }
 
-        protected FeatureUpdaterBase(SensorStore sensorStore)
+        protected FeatureUpdaterBase(HassMqttManager hassMqttManager)
         {
-            SensorStore = sensorStore;
+            HassMqttManager = hassMqttManager;
         }
 
         public void Update(SwimmingPool pool, object obj)
@@ -18,27 +19,23 @@ namespace MBW.BlueRiiot2MQTT.Features
             if (!AppliesTo(pool, obj))
                 return;
 
-            string uniqueId = GetUniqueId(pool, obj);
+            CreateSensor(pool, obj);
 
-            if (!SensorStore.IsDiscovered(uniqueId))
-                CreateSensor(pool, uniqueId, obj);
-
-            UpdateInternal(pool, uniqueId, obj);
+            UpdateInternal(pool, obj);
         }
 
         protected abstract bool AppliesTo(SwimmingPool pool, object obj);
 
-        protected abstract string GetUniqueId(SwimmingPool pool, object obj);
+        protected abstract void CreateSensor(SwimmingPool pool, object obj);
 
-        protected abstract void CreateSensor(SwimmingPool pool, string uniqueId, object obj);
-
-        protected abstract void UpdateInternal(SwimmingPool pool, string uniqueId, object obj);
+        protected abstract void UpdateInternal(SwimmingPool pool, object obj);
     }
-
+    
+    [UsedImplicitly]
     internal abstract class FeatureUpdaterBaseTyped<T> : FeatureUpdaterBase where T : class
     {
-        protected FeatureUpdaterBaseTyped(SensorStore sensorStore)
-            : base(sensorStore)
+        protected FeatureUpdaterBaseTyped(HassMqttManager hassMqttManager)
+            : base(hassMqttManager)
         {
         }
 
@@ -47,19 +44,14 @@ namespace MBW.BlueRiiot2MQTT.Features
             return obj is T asT && AppliesTo(pool, asT);
         }
 
-        protected sealed override string GetUniqueId(SwimmingPool pool, object obj)
+        protected sealed override void CreateSensor(SwimmingPool pool, object obj)
         {
-            return GetUniqueId(pool, (T)obj);
+            CreateSensor(pool, (T)obj);
         }
 
-        protected sealed override void CreateSensor(SwimmingPool pool, string uniqueId, object obj)
+        protected sealed override void UpdateInternal(SwimmingPool pool, object obj)
         {
-            CreateSensor(pool, uniqueId, (T)obj);
-        }
-
-        protected sealed override void UpdateInternal(SwimmingPool pool, string uniqueId, object obj)
-        {
-            UpdateInternal(pool, uniqueId, (T)obj);
+            UpdateInternal(pool, (T)obj);
         }
 
         protected virtual bool AppliesTo(SwimmingPool pool, T obj)
@@ -67,10 +59,8 @@ namespace MBW.BlueRiiot2MQTT.Features
             return true;
         }
 
-        protected abstract string GetUniqueId(SwimmingPool pool, T obj);
+        protected abstract void CreateSensor(SwimmingPool pool, T obj);
 
-        protected abstract void CreateSensor(SwimmingPool pool, string uniqueId, T obj);
-
-        protected abstract void UpdateInternal(SwimmingPool pool, string uniqueId, T obj);
+        protected abstract void UpdateInternal(SwimmingPool pool, T obj);
     }
 }

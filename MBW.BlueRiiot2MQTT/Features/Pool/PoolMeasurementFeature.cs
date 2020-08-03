@@ -1,26 +1,33 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using EnumsNET;
+using JetBrains.Annotations;
 using MBW.BlueRiiot2MQTT.Features.Enums;
 using MBW.BlueRiiot2MQTT.Features.Pool.Bases;
 using MBW.BlueRiiot2MQTT.HASS;
-using MBW.BlueRiiot2MQTT.HASS.Enum;
 using MBW.BlueRiiot2MQTT.Helpers;
 using MBW.Client.BlueRiiotApi.Objects;
 using MBW.Client.BlueRiiotApi.RequestsResponses;
+using MBW.HassMQTT;
+using MBW.HassMQTT.CommonServices.AliveAndWill;
+using MBW.HassMQTT.DiscoveryModels.Enum;
+using MBW.HassMQTT.DiscoveryModels.Models;
+using MBW.HassMQTT.Extensions;
+using MBW.HassMQTT.Interfaces;
 
 namespace MBW.BlueRiiot2MQTT.Features.Pool
 {
+    [UsedImplicitly]
     internal abstract class PoolMeasurementFeature : LastMeasurementsFeatureBase
     {
-        private readonly string _name;
+        private readonly string _displayName;
         private readonly string _key;
         private readonly string _measurement;
         private readonly string _unit;
 
-        public PoolMeasurementFeature(SensorStore sensorStore, string name, string measurement, string unit) : base(sensorStore)
+        public PoolMeasurementFeature(HassMqttManager hassMqttManager, string displayName, string measurement, string unit) : base(hassMqttManager)
         {
-            _name = name;
+            _displayName = displayName;
             _key = measurement.ToLower();
             _measurement = measurement;
             _unit = unit;
@@ -37,92 +44,103 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
             return latest != null && TryGetMeasurement(latest.Data, out _);
         }
 
-        protected override string GetUniqueId(SwimmingPool pool, List<SwimmingPoolLastMeasurementsGetResponse> measurements, SwimmingPoolLastMeasurementsGetResponse latest)
+        protected override void CreateSensor(SwimmingPool pool, List<SwimmingPoolLastMeasurementsGetResponse> measurements, SwimmingPoolLastMeasurementsGetResponse latest)
         {
-            return $"pool_{pool.SwimmingPoolId}_{_key}";
-        }
-
-        protected override void CreateSensor(SwimmingPool pool, string uniqueId, List<SwimmingPoolLastMeasurementsGetResponse> measurements, SwimmingPoolLastMeasurementsGetResponse latest)
-        {
-            SensorStore.Create($"{pool.Name} {_name}", uniqueId, HassDeviceType.Sensor, $"pool_{pool.SwimmingPoolId}", _measurement, HassDeviceClass.None)
+            HassMqttManager.ConfigureSensor<MqttSensor>(HassUniqueIdBuilder.GetPoolDeviceId(pool), _measurement)
+                .ConfigureTopics(HassTopicKind.State, HassTopicKind.JsonAttributes)
                 .SetHassProperties(pool)
-                .SetProperty(HassMqttSensorProperty.UnitOfMeasurement, _unit);
+                .ConfigureDiscovery(discovery =>
+                {
+                    discovery.Name = $"{pool.Name} {_displayName}";
+                    discovery.UnitOfMeasurement = _unit;
+                })
+                .ConfigureAliveService();
         }
 
-        protected override void UpdateInternal(SwimmingPool pool, string uniqueId, List<SwimmingPoolLastMeasurementsGetResponse> measurements, SwimmingPoolLastMeasurementsGetResponse latest)
+        protected override void UpdateInternal(SwimmingPool pool, List<SwimmingPoolLastMeasurementsGetResponse> measurements, SwimmingPoolLastMeasurementsGetResponse latest)
         {
             if (!TryGetMeasurement(latest.Data, out SwpLastMeasurements measurement))
                 return;
 
-            HassMqttSensor sensor = SensorStore.Get(uniqueId);
+            ISensorContainer sensor = HassMqttManager.GetSensor(HassUniqueIdBuilder.GetPoolDeviceId(pool), _measurement);
+            MqttAttributesTopic attributesSender = sensor.GetAttributesSender();
 
-            MeasurementUtility.AddAttributes(sensor, measurement);
+            MeasurementUtility.AddAttributes(attributesSender, measurement);
 
             MeasurementStatus status = MeasurementUtility.GetStatus(measurement);
-            sensor.SetAttribute("status", status.AsString(EnumFormat.EnumMemberValue));
+            attributesSender.SetAttribute("status", status.AsString(EnumFormat.EnumMemberValue));
 
-            sensor.SetValue(measurement.Value);
+            sensor.SetValue(HassTopicKind.State, measurement.Value);
         }
-
+        
+        [UsedImplicitly]
         internal class PoolTaFeature : PoolMeasurementFeature
         {
-            public PoolTaFeature(SensorStore sensorStore) : base(sensorStore, "Total Alkalinity", "ta", "mg/L")
+            public PoolTaFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Total Alkalinity", "ta", "mg/L")
             {
             }
         }
-
+        
+        [UsedImplicitly]
         internal class PoolPhFeature : PoolMeasurementFeature
         {
-            public PoolPhFeature(SensorStore sensorStore) : base(sensorStore, "pH", "ph", "pH")
+            public PoolPhFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "pH", "ph", "pH")
             {
             }
         }
-
+        
+        [UsedImplicitly]
         internal class PoolCyaFeature : PoolMeasurementFeature
         {
-            public PoolCyaFeature(SensorStore sensorStore) : base(sensorStore, "Cyuranic Acid", "cya", "mg/L")
+            public PoolCyaFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Cyuranic Acid", "cya", "mg/L")
             {
             }
         }
-
+        
+        [UsedImplicitly]
         internal class PoolTemperatureFeature : PoolMeasurementFeature
         {
-            public PoolTemperatureFeature(SensorStore sensorStore) : base(sensorStore, "Temperature", "temperature", "°C")
+            public PoolTemperatureFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Temperature", "temperature", "°C")
             {
             }
         }
-
+        
+        [UsedImplicitly]
         internal class PoolConductivityFeature : PoolMeasurementFeature
         {
-            public PoolConductivityFeature(SensorStore sensorStore) : base(sensorStore, "Conductivity", "conductivity", "µS")
+            public PoolConductivityFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Conductivity", "conductivity", "µS")
             {
             }
         }
-
+        
+        [UsedImplicitly]
         internal class PoolOrpFeature : PoolMeasurementFeature
         {
-            public PoolOrpFeature(SensorStore sensorStore) : base(sensorStore, "ORP", "orp", "mV")
+            public PoolOrpFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "ORP", "orp", "mV")
             {
             }
         }
-
+        
+        [UsedImplicitly]
         internal class PoolSalinityFeature : PoolMeasurementFeature
         {
-            public PoolSalinityFeature(SensorStore sensorStore) : base(sensorStore, "Salinity", "salinity", "g/L")
+            public PoolSalinityFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Salinity", "salinity", "g/L")
             {
             }
         }
-
+        
+        [UsedImplicitly]
         internal class PoolFreeChlorineFeature : PoolMeasurementFeature
         {
-            public PoolFreeChlorineFeature(SensorStore sensorStore) : base(sensorStore, "Free Chlorine", "fcl", "ppm")
+            public PoolFreeChlorineFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Free Chlorine", "fcl", "ppm")
             {
             }
         }
-
+        
+        [UsedImplicitly]
         internal class PoolFreeBromineFeature : PoolMeasurementFeature
         {
-            public PoolFreeBromineFeature(SensorStore sensorStore) : base(sensorStore, "Free Bromine", "fbr", "ppm")
+            public PoolFreeBromineFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Free Bromine", "fbr", "ppm")
             {
             }
         }

@@ -1,16 +1,19 @@
-﻿using MBW.BlueRiiot2MQTT.HASS;
-using MBW.BlueRiiot2MQTT.HASS.Enum;
-using MBW.Client.BlueRiiotApi.Objects;
+﻿using MBW.Client.BlueRiiotApi.Objects;
+using MBW.HassMQTT.DiscoveryModels;
+using MBW.HassMQTT.Extensions;
+using MBW.HassMQTT.Interfaces;
 
 namespace MBW.BlueRiiot2MQTT.Helpers
 {
     internal static class HassUtilities
     {
-        public static HassMqttSensor SetHassProperties(this HassMqttSensor sensor, SwimmingPool pool)
+        public static IDiscoveryDocumentBuilder<TEntity> SetHassProperties<TEntity>(this IDiscoveryDocumentBuilder<TEntity> sensor, SwimmingPool pool) where TEntity : MqttSensorDiscoveryBase
         {
-            return sensor
-                .SetDeviceProperty(HassMqttSensorDeviceProperty.Name, pool.Name)
-                .AddDeviceIdentifier(pool.SwimmingPoolId);
+            return sensor.ConfigureDevice(device =>
+            {
+                device.Name = pool.Name;
+                device.Identifiers = new[] {pool.SwimmingPoolId};
+            });
         }
     }
 }

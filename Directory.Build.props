@@ -1,0 +1,28 @@
+﻿<Project>
+
+  <PropertyGroup>
+    <Version>0.4.0</Version>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <!-- Nuget -->
+  <PropertyGroup>
+    <Authors>LordMike</Authors>
+    <Company>MBWarez</Company>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/LordMike/MBW.BlueRiiot2MQTT</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/LordMike/MBW.BlueRiiot2MQTT.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>home-assistant blueriiot</PackageTags>
+    <Copyright>Michael Bisbjerg @ 2020</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Private packages, not to be included in dependencies -->
+    <PackageReference Include="JetBrains.Annotations" Version="2020.1.0" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

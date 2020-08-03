@@ -1,43 +1,51 @@
-﻿using MBW.BlueRiiot2MQTT.HASS;
-using MBW.BlueRiiot2MQTT.HASS.Enum;
+﻿using JetBrains.Annotations;
+using MBW.BlueRiiot2MQTT.HASS;
 using MBW.BlueRiiot2MQTT.Helpers;
 using MBW.Client.BlueRiiotApi.Objects;
 using MBW.Client.BlueRiiotApi.RequestsResponses;
+using MBW.HassMQTT;
+using MBW.HassMQTT.CommonServices.AliveAndWill;
+using MBW.HassMQTT.DiscoveryModels.Enum;
+using MBW.HassMQTT.DiscoveryModels.Models;
+using MBW.HassMQTT.Extensions;
+using MBW.HassMQTT.Interfaces;
 
 namespace MBW.BlueRiiot2MQTT.Features.Pool
 {
+    [UsedImplicitly]
     internal class PoolGuidanceFeature : FeatureUpdaterBaseTyped<SwimmingPoolGuidanceGetResponse>
     {
-        public PoolGuidanceFeature(SensorStore sensorStore) : base(sensorStore)
+        public PoolGuidanceFeature(HassMqttManager hassMqttManager) : base(hassMqttManager)
         {
         }
 
-        protected override string GetUniqueId(SwimmingPool pool, SwimmingPoolGuidanceGetResponse guidance)
+        protected override void CreateSensor(SwimmingPool pool, SwimmingPoolGuidanceGetResponse guidance)
         {
-            return $"pool_{pool.SwimmingPoolId}_guidance";
+            HassMqttManager.ConfigureSensor<MqttSensor>(HassUniqueIdBuilder.GetPoolDeviceId(pool), "guidance")
+                .ConfigureTopics(HassTopicKind.State, HassTopicKind.JsonAttributes)
+                .SetHassProperties(pool)
+                .ConfigureDiscovery(discovery =>
+                {
+                    discovery.Name = $"{pool.Name} Guidance";
+                })
+                .ConfigureAliveService();
         }
 
-        protected override void CreateSensor(SwimmingPool pool, string uniqueId, SwimmingPoolGuidanceGetResponse guidance)
+        protected override void UpdateInternal(SwimmingPool pool, SwimmingPoolGuidanceGetResponse guidance)
         {
-            SensorStore.Create($"{pool.Name} Guidance", uniqueId, HassDeviceType.Sensor, $"pool_{pool.SwimmingPoolId}", "guidance", HassDeviceClass.None)
-                .SetHassProperties(pool);
-        }
-
-        protected override void UpdateInternal(SwimmingPool pool, string uniqueId, SwimmingPoolGuidanceGetResponse guidance)
-        {
-            HassMqttSensor sensor = SensorStore.Get(uniqueId);
+            ISensorContainer sensor = HassMqttManager.GetSensor(HassUniqueIdBuilder.GetPoolDeviceId(pool), "guidance");
 
             if (guidance.Guidance?.IssueToFix == null)
             {
-                sensor.SetValue("No guidance at this time");
+                sensor.SetValue(HassTopicKind.State, "No guidance at this time");
                 sensor.SetAttribute("status", "ok");
 
                 return;
             }
 
-            string text = guidance.Guidance.IssueToFix.IssueTitle + ": " + guidance.Guidance.IssueToFix.ActionTitle; 
+            string text = $"{guidance.Guidance.IssueToFix.IssueTitle}: {guidance.Guidance.IssueToFix.ActionTitle}";
 
-            sensor.SetValue(text);
+            sensor.SetValue(HassTopicKind.State, text);
             sensor.SetAttribute("status", "alert");
         }
     }

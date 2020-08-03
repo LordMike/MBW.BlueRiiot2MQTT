@@ -1,7 +1,7 @@
 ﻿using EnumsNET;
 using MBW.BlueRiiot2MQTT.Features.Enums;
-using MBW.BlueRiiot2MQTT.HASS;
 using MBW.Client.BlueRiiotApi.Objects;
+using MBW.HassMQTT;
 
 namespace MBW.BlueRiiot2MQTT.Helpers
 {
@@ -18,7 +18,7 @@ namespace MBW.BlueRiiot2MQTT.Helpers
             return MeasurementStatus.Bad;
         }
 
-        public static void AddAttributes(HassMqttSensor sensor, SwpLastMeasurements measurement)
+        public static void AddAttributes(MqttAttributesTopic sensor, SwpLastMeasurements measurement)
         {
             sensor.SetAttribute("min", measurement.GaugeMin);
             sensor.SetAttribute("max", measurement.GaugeMax);

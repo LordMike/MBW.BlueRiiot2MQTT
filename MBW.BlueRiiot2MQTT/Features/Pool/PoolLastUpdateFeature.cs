@@ -1,40 +1,51 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 using MBW.BlueRiiot2MQTT.Features.Pool.Bases;
 using MBW.BlueRiiot2MQTT.HASS;
-using MBW.BlueRiiot2MQTT.HASS.Enum;
 using MBW.BlueRiiot2MQTT.Helpers;
 using MBW.Client.BlueRiiotApi.Objects;
 using MBW.Client.BlueRiiotApi.RequestsResponses;
+using MBW.HassMQTT;
+using MBW.HassMQTT.CommonServices.AliveAndWill;
+using MBW.HassMQTT.DiscoveryModels.Enum;
+using MBW.HassMQTT.DiscoveryModels.Models;
+using MBW.HassMQTT.Extensions;
+using MBW.HassMQTT.Interfaces;
 
 namespace MBW.BlueRiiot2MQTT.Features.Pool
 {
+    [UsedImplicitly]
     internal class PoolLastUpdateFeature : LastMeasurementsFeatureBase
     {
-        public PoolLastUpdateFeature(SensorStore sensorStore) : base(sensorStore)
+        const string AttributeMeasurement = "measurement";
+
+        public PoolLastUpdateFeature(HassMqttManager hassMqttManager) : base(hassMqttManager)
         {
         }
 
-        protected override string GetUniqueId(SwimmingPool pool, List<SwimmingPoolLastMeasurementsGetResponse> measurements, SwimmingPoolLastMeasurementsGetResponse latest)
+        protected override void CreateSensor(SwimmingPool pool, List<SwimmingPoolLastMeasurementsGetResponse> measurements, SwimmingPoolLastMeasurementsGetResponse latest)
         {
-            return $"pool_{pool.SwimmingPoolId}_last_measurement";
+            HassMqttManager.ConfigureSensor<MqttSensor>(HassUniqueIdBuilder.GetPoolDeviceId(pool), "last_measurement")
+                .ConfigureTopics(HassTopicKind.State, HassTopicKind.JsonAttributes)
+                .SetHassProperties(pool)
+                .ConfigureDiscovery(discovery =>
+                {
+                    discovery.Name = $"{pool.Name} Last Measurement";
+                    discovery.DeviceClass = HassDeviceClass.Timestamp;
+                })
+                .ConfigureAliveService();
         }
 
-        protected override void CreateSensor(SwimmingPool pool, string uniqueId,  List<SwimmingPoolLastMeasurementsGetResponse> measurements, SwimmingPoolLastMeasurementsGetResponse latest)
+        protected override void UpdateInternal(SwimmingPool pool, List<SwimmingPoolLastMeasurementsGetResponse> measurements, SwimmingPoolLastMeasurementsGetResponse latest)
         {
-            SensorStore.Create($"{pool.Name} Last Measurement", uniqueId, HassDeviceType.Sensor, $"pool_{pool.SwimmingPoolId}", "last_measurement", HassDeviceClass.Timestamp)
-                .SetHassProperties(pool);
-        }
-        
-        protected override void UpdateInternal(SwimmingPool pool, string uniqueId, List<SwimmingPoolLastMeasurementsGetResponse> measurements, SwimmingPoolLastMeasurementsGetResponse latest)
-        {
-            HassMqttSensor sensor = SensorStore.Get(uniqueId);
+            ISensorContainer sensor = HassMqttManager.GetSensor(HassUniqueIdBuilder.GetPoolDeviceId(pool), "last_measurement");
 
             if (latest == null)
             {
                 // No measurements
-                sensor.SetAttribute("measurement", "none");
-                sensor.SetValue(null);
+                sensor.SetValue(HassTopicKind.State, null);
+                sensor.SetAttribute(AttributeMeasurement, "none");
 
                 return;
             }
@@ -46,7 +57,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
                 // Blue measurement is latest
                 lastMeasurement = latest.Data.OrderByDescending(s => s.Timestamp).FirstOrDefault();
 
-                sensor.SetValue(latest.LastBlueMeasureTimestamp);
+                sensor.SetValue(HassTopicKind.State, latest.LastBlueMeasureTimestamp);
                 sensor.SetAttribute("method", "blue");
             }
             else if (latest.LastStripTimestamp.HasValue)
@@ -54,18 +65,18 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
                 // Strip measurement is latest
                 lastMeasurement = latest.Data.OrderByDescending(s => s.Timestamp).FirstOrDefault();
 
-                sensor.SetValue(latest.LastStripTimestamp);
+                sensor.SetValue(HassTopicKind.State, latest.LastStripTimestamp);
                 sensor.SetAttribute("method", "strip");
             }
             else
             {
                 // No measurements
-                sensor.SetAttribute("measurement", "none");
-                sensor.SetValue(null);
+                sensor.SetAttribute(AttributeMeasurement, "none");
+                sensor.SetValue(HassTopicKind.State, null);
             }
 
             if (lastMeasurement != null)
-                sensor.SetAttribute("measurement", lastMeasurement.Name);
+                sensor.SetAttribute(AttributeMeasurement, lastMeasurement.Name);
         }
     }
 }
