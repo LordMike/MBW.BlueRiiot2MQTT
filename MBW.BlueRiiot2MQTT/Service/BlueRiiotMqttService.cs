@@ -28,11 +28,14 @@ namespace MBW.BlueRiiot2MQTT.Service
         private readonly FeatureUpdateManager _updateManager;
         private readonly HassMqttManager _hassMqttManager;
         private readonly BlueRiiotConfiguration _config;
+        private readonly Random _random = new Random();
+        private readonly TimeSpan _minimumInterval = TimeSpan.FromSeconds(30);
 
         public const string OkMessage = "ok";
         public const string ProblemMessage = "problem";
 
         private DateTime _lastMeasurement = DateTime.MinValue;
+        private TimeSpan? _measureInterval;
 
         public BlueRiiotMqttService(
             ILogger<BlueRiiotMqttService> logger,
@@ -48,6 +51,41 @@ namespace MBW.BlueRiiot2MQTT.Service
             _config = config.Value;
         }
 
+        private TimeSpan CalculateDelay(DateTime lastRun)
+        {
+            TimeSpan toDelay;
+            DateTime nextCheck;
+            if (_measureInterval.HasValue)
+            {
+                nextCheck = (_lastMeasurement + _measureInterval.Value)
+                    .AddSeconds(_random.Next(0, (int)_config.UpdateIntervalJitter.TotalSeconds));
+            }
+            else
+            {
+                nextCheck = (lastRun + _config.UpdateInterval)
+                    .AddSeconds(_random.Next(0, (int)_config.UpdateIntervalJitter.TotalSeconds));
+            }
+
+            toDelay = nextCheck - DateTime.UtcNow;
+
+            // Always wait at least Ns, to avoid error-induced loops
+            if (toDelay < _minimumInterval)
+            {
+                if (lastRun == DateTime.MinValue)
+                    // First delay should be minimal
+                    toDelay = TimeSpan.FromSeconds(1);
+                else
+                    toDelay = _minimumInterval;
+            }
+
+            if (_measureInterval.HasValue)
+                _logger.LogInformation("New data ready at {DateTime} (interval {Interval}). Waiting {Delay}", nextCheck, _measureInterval.Value, toDelay);
+            else
+                _logger.LogInformation("Delaying till next check, at {DateTime}, waiting {Delay}", nextCheck, toDelay);
+
+            return toDelay;
+        }
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             CreateSystemEntities();
@@ -59,11 +97,10 @@ namespace MBW.BlueRiiot2MQTT.Service
 
             while (!stoppingToken.IsCancellationRequested)
             {
-                TimeSpan toDelay = _config.UpdateInterval - (DateTime.UtcNow - lastRun);
-                if (toDelay > TimeSpan.Zero)
-                {
-                    await Task.Delay(toDelay, stoppingToken);
-                }
+                // Calculate time to next update
+                TimeSpan toDelay = CalculateDelay(lastRun);
+
+                await Task.Delay(toDelay, stoppingToken);
 
                 _logger.LogDebug("Beginning update");
 
@@ -131,6 +168,7 @@ namespace MBW.BlueRiiot2MQTT.Service
         {
             SwimmingPoolGetResponse pools = await _blueClient.GetSwimmingPools(token: stoppingToken);
             DateTime lastMeasurement = DateTime.MinValue;
+            _measureInterval = null;
 
             foreach (UserSwimmingPool userPool in pools.Data)
             {
@@ -154,6 +192,9 @@ namespace MBW.BlueRiiot2MQTT.Service
                     _updateManager.Process(pool, blueDevice);
 
                     SwimmingPoolLastMeasurementsGetResponse blueMeasurement = await _blueClient.GetBlueLastMeasurements(pool.SwimmingPoolId, blueDevice.BlueDeviceSerial, token: stoppingToken);
+
+                    if (blueDevice.BlueDevice.WakePeriod > 0)
+                        _measureInterval = ComparisonHelper.GetMin(_measureInterval, TimeSpan.FromSeconds(blueDevice.BlueDevice.WakePeriod));
 
                     measurements.Add(blueMeasurement);
                     lastMeasurement = ComparisonHelper.GetMax(lastMeasurement, blueMeasurement.LastStripTimestamp, blueMeasurement.LastBlueMeasureTimestamp).GetValueOrDefault();
