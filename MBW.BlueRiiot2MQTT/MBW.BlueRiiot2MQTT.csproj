@@ -8,7 +8,7 @@
   <ItemGroup>
     <PackageReference Include="AwsSignatureVersion4" Version="1.3.0" />
     <PackageReference Include="Enums.NET" Version="3.0.3" />
-    <PackageReference Include="MBW.Client.BlueRiiotAPI" Version="0.6.0" />
+    <PackageReference Include="MBW.Client.BlueRiiotAPI" Version="0.7.0" />
     <PackageReference Include="MBW.HassMQTT" Version="1.2.0" />
     <PackageReference Include="MBW.HassMQTT.CommonServices" Version="1.2.0" />
     <PackageReference Include="MQTTnet" Version="3.0.11" />

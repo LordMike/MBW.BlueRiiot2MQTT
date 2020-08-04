@@ -151,6 +151,7 @@ namespace MBW.BlueRiiot2MQTT.Service
                 foreach (SwimmingPoolDevice blueDevice in blueDevices.Data)
                 {
                     _logger.LogDebug("Fetching measurements for {Id}, blue {Serial} ({Name})", pool.SwimmingPoolId, blueDevice.BlueDeviceSerial, pool.Name);
+                    _updateManager.Process(pool, blueDevice);
 
                     SwimmingPoolLastMeasurementsGetResponse blueMeasurement = await _blueClient.GetBlueLastMeasurements(pool.SwimmingPoolId, blueDevice.BlueDeviceSerial, token: stoppingToken);
 
@@ -181,11 +182,15 @@ namespace MBW.BlueRiiot2MQTT.Service
                 //_updateManager.Update(pool, status);
             }
 
-            if (lastMeasurement > _lastMeasurement && _config.ReportUnchangedValues)
+            if (lastMeasurement > _lastMeasurement)
             {
-                // A new measurement was made, report potentially unchanged values
                 _lastMeasurement = lastMeasurement;
-                _hassMqttManager.MarkAllValuesDirty();
+
+                if (_config.ReportUnchangedValues)
+                {
+                    // A new measurement was made, report potentially unchanged values
+                    _hassMqttManager.MarkAllValuesDirty();
+                }
             }
         }
     }

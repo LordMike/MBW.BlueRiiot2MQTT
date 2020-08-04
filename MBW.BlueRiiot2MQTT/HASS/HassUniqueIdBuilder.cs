@@ -8,6 +8,11 @@ namespace MBW.BlueRiiot2MQTT.HASS
         {
             return "BlueRiiot2MQTT";
         }
+        
+        public static string GetBlueDeviceId(SwimmingPoolDevice device)
+        {
+            return "blue_" + device.BlueDeviceSerial;
+        }
 
         public static string GetPoolDeviceId(SwimmingPool pool)
         {
