@@ -11,6 +11,7 @@ _This project is not affiliated with or endorsed by Blue Riiot._
 
 # Features
 
+* Creates binary sensors indicating issues with this service, or the BlueRiiot webservice
 * Creates sensors for each pool in Blue Riiot
   * Tracks the latest measurements for pH, temperature, Cyanuric Acid and Alkalinity
   * Tracks warning / danger levels for the measurements
