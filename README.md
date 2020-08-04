@@ -17,13 +17,13 @@ _This project is not affiliated with or endorsed by Blue Riiot._
   * Tracks warning / danger levels for the measurements
   * Weather forecast, with temperature, UV index and weather type e.g. 'rain'
   * Notifies when actions need to be done (use the Blue Riiot app to get more details on steps)
+* Creates sensors for each Blue device, with their battery status
+* Automatically polls closely to the Blue device's reportings, to get 'live' data
 
 Todo:
 
-* Track battery status
 * Identify MIA Blue Connects
 * Get more detailed states from Blue Connect (warnings and errors)
-* Adjust the polling interval automatically
 
 # Setup
 
