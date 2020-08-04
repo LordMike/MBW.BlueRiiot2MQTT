@@ -30,7 +30,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool.Bases
         {
             HassMqttManager.ConfigureSensor<MqttSensor>(HassUniqueIdBuilder.GetPoolDeviceId(pool), _measurement)
                 .ConfigureTopics(HassTopicKind.State, HassTopicKind.JsonAttributes)
-                .SetHassProperties(pool)
+                .SetHassPoolProperties(pool)
                 .ConfigureDiscovery(discovery =>
                 {
                     discovery.Name = $"{pool.Name} {_displayName}";

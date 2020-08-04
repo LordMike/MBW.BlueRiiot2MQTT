@@ -23,7 +23,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
         {
             HassMqttManager.ConfigureSensor<MqttSensor>(HassUniqueIdBuilder.GetPoolDeviceId(pool), "guidance")
                 .ConfigureTopics(HassTopicKind.State, HassTopicKind.JsonAttributes)
-                .SetHassProperties(pool)
+                .SetHassPoolProperties(pool)
                 .ConfigureDiscovery(discovery =>
                 {
                     discovery.Name = $"{pool.Name} Guidance";

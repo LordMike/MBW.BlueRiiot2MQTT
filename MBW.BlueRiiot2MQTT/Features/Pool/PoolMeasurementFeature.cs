@@ -21,14 +21,12 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
     internal abstract class PoolMeasurementFeature : LastMeasurementsFeatureBase
     {
         private readonly string _displayName;
-        private readonly string _key;
         private readonly string _measurement;
         private readonly string _unit;
 
         public PoolMeasurementFeature(HassMqttManager hassMqttManager, string displayName, string measurement, string unit) : base(hassMqttManager)
         {
             _displayName = displayName;
-            _key = measurement.ToLower();
             _measurement = measurement;
             _unit = unit;
         }
@@ -48,7 +46,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
         {
             HassMqttManager.ConfigureSensor<MqttSensor>(HassUniqueIdBuilder.GetPoolDeviceId(pool), _measurement)
                 .ConfigureTopics(HassTopicKind.State, HassTopicKind.JsonAttributes)
-                .SetHassProperties(pool)
+                .SetHassPoolProperties(pool)
                 .ConfigureDiscovery(discovery =>
                 {
                     discovery.Name = $"{pool.Name} {_displayName}";

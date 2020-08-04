@@ -4,15 +4,22 @@ namespace MBW.BlueRiiot2MQTT.Helpers
 {
     internal static class ComparisonHelper
     {
-        public static DateTime? GetMax(DateTime? a, DateTime? b)
+        public static T? GetMax<T>(params T?[] values) where T : struct, IComparable<T>
         {
-            if (!a.HasValue)
-                return b;
+            T? latest = null;
 
-            if (!b.HasValue)
-                return a;
+            foreach (var value in values)
+            {
+                if (!value.HasValue)
+                    continue;
 
-            return a.Value > b.Value ? a : b;
+                if (latest.HasValue && latest.Value.CompareTo(value.Value) > 0)
+                    continue;
+
+                latest = value;
+            }
+
+            return latest;
         }
     }
 }

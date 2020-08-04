@@ -7,7 +7,7 @@ namespace MBW.BlueRiiot2MQTT.Helpers
 {
     internal static class HassUtilities
     {
-        public static IDiscoveryDocumentBuilder<TEntity> SetHassProperties<TEntity>(this IDiscoveryDocumentBuilder<TEntity> sensor, SwimmingPool pool) where TEntity : MqttSensorDiscoveryBase
+        public static IDiscoveryDocumentBuilder<TEntity> SetHassPoolProperties<TEntity>(this IDiscoveryDocumentBuilder<TEntity> sensor, SwimmingPool pool) where TEntity : MqttSensorDiscoveryBase
         {
             return sensor.ConfigureDevice(device =>
             {

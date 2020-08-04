@@ -155,8 +155,7 @@ namespace MBW.BlueRiiot2MQTT.Service
                     SwimmingPoolLastMeasurementsGetResponse blueMeasurement = await _blueClient.GetBlueLastMeasurements(pool.SwimmingPoolId, blueDevice.BlueDeviceSerial, token: stoppingToken);
 
                     measurements.Add(blueMeasurement);
-                    lastMeasurement = ComparisonHelper.GetMax(lastMeasurement, blueMeasurement.LastStripTimestamp).GetValueOrDefault();
-                    lastMeasurement = ComparisonHelper.GetMax(lastMeasurement, blueMeasurement.LastBlueMeasureTimestamp).GetValueOrDefault();
+                    lastMeasurement = ComparisonHelper.GetMax(lastMeasurement, blueMeasurement.LastStripTimestamp, blueMeasurement.LastBlueMeasureTimestamp).GetValueOrDefault();
                 }
 
                 _logger.LogDebug("Fetching guidance for {Id} ({Name})", pool.SwimmingPoolId, pool.Name);
@@ -168,8 +167,7 @@ namespace MBW.BlueRiiot2MQTT.Service
 
                 SwimmingPoolLastMeasurementsGetResponse measurement = await _blueClient.GetSwimmingPoolLastMeasurements(pool.SwimmingPoolId, stoppingToken);
                 measurements.Add(measurement);
-                lastMeasurement = ComparisonHelper.GetMax(lastMeasurement, measurement.LastStripTimestamp).GetValueOrDefault();
-                lastMeasurement = ComparisonHelper.GetMax(lastMeasurement, measurement.LastBlueMeasureTimestamp).GetValueOrDefault();
+                lastMeasurement = ComparisonHelper.GetMax(lastMeasurement, measurement.LastStripTimestamp, lastMeasurement, measurement.LastBlueMeasureTimestamp).GetValueOrDefault();
 
                 _updateManager.Process(pool, measurements);
 
