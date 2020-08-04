@@ -35,7 +35,7 @@ Todo:
 | MQTT__Port | | 1883 | |
 | MQTT__Username | | | |
 | MQTT__Password | | | |
-| MQTT__ClientId | | `blueriiot2mqtt-RANDOM` | |
+| MQTT__ClientId | | `blueriiot2mqtt` | |
 | MQTT__ReconnectInterval | | `00:00:30` | How long to wait before reconnecting to MQTT |
 | HASS__DiscoveryPrefix | | `homeassistant` | Prefix of HASS discovery topics |
 | HASS__BlueRiiotPrefix | | `blueriiot2mqtt` | Prefix of state and attribute topics |

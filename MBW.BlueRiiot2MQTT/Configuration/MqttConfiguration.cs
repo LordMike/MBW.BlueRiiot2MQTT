@@ -12,7 +12,7 @@ namespace MBW.BlueRiiot2MQTT.Configuration
 
         public string Password { get; set; }
 
-        public string ClientId { get; set; } = $"blueriiot2mqtt-{new Random().Next()}";
+        public string ClientId { get; set; } = "blueriiot2mqtt";
 
         public TimeSpan? KeepAlivePeriod { get; set; }
     }
