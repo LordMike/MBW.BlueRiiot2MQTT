@@ -5,7 +5,7 @@
 
 This is a proxy application to translate the status of a Blue Riiot pool manager, to Home Assistant using MQTT. You can run this application in docker, and it will periodically poll the Blue Riiot API for updates.
 
-This project uses another library of mine, the [MBW.Client.BlueRiiotApi](https://github.com/LordMike/MBW.Client.BlueRiiotApi) ([nuget](https://www.nuget.org/packages/MBW.Client.BlueRiiotAPI)).
+This project uses other libraries of mine, the [MBW.Client.BlueRiiotApi](https://github.com/LordMike/MBW.Client.BlueRiiotApi) ([nuget](https://www.nuget.org/packages/MBW.Client.BlueRiiotAPI)) and [MBW.HassMQTT](https://github.com/LordMike/MBW.HassMQTT) ([nuget](https://www.nuget.org/packages/MBW.HassMQTT)).
 
 _This project is not affiliated with or endorsed by Blue Riiot._
 
@@ -14,9 +14,10 @@ _This project is not affiliated with or endorsed by Blue Riiot._
 * Creates binary sensors indicating issues with this service, or the BlueRiiot webservice
 * Creates sensors for each pool in Blue Riiot
   * Tracks the latest measurements for pH, temperature, Cyanuric Acid and Alkalinity
-  * Tracks warning / danger levels for the measurements
+  * Tracks warning / danger levels for all measurements
   * Weather forecast, with temperature, UV index and weather type e.g. 'rain'
   * Notifies when actions need to be done (use the Blue Riiot app to get more details on steps)
+* Ability to cope with metrics databases, by reporting unchanged values
 * Creates sensors for each Blue device, with their battery status
 * Automatically polls closely to the Blue device's reportings, to get 'live' data
 
