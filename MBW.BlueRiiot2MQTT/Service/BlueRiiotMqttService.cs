@@ -53,6 +53,8 @@ namespace MBW.BlueRiiot2MQTT.Service
 
         private TimeSpan CalculateDelay(DateTime lastRun)
         {
+            bool isFirstRun = lastRun == DateTime.MinValue;
+
             TimeSpan toDelay;
             DateTime nextCheck;
             if (_measureInterval.HasValue)
@@ -70,18 +72,15 @@ namespace MBW.BlueRiiot2MQTT.Service
 
             // Always wait at least Ns, to avoid error-induced loops
             if (toDelay < _minimumInterval)
-            {
-                if (lastRun == DateTime.MinValue)
-                    // First delay should be minimal
-                    toDelay = TimeSpan.FromSeconds(1);
-                else
-                    toDelay = _minimumInterval;
-            }
+                toDelay = isFirstRun ? TimeSpan.FromSeconds(1) : _minimumInterval;
 
-            if (_measureInterval.HasValue)
-                _logger.LogInformation("New data ready at {DateTime} (interval {Interval}). Waiting {Delay}", nextCheck, _measureInterval.Value, toDelay);
-            else
-                _logger.LogInformation("Delaying till next check, at {DateTime}, waiting {Delay}", nextCheck, toDelay);
+            if (!isFirstRun)
+            {
+                if (_measureInterval.HasValue)
+                    _logger.LogInformation("New data ready at {DateTime} (interval {Interval}). Waiting {Delay}", nextCheck, _measureInterval.Value, toDelay);
+                else
+                    _logger.LogInformation("Delaying till next check, at {DateTime}, waiting {Delay}", nextCheck, toDelay);
+            }
 
             return toDelay;
         }
