@@ -58,6 +58,7 @@ namespace MBW.BlueRiiot2MQTT.Features.BlueDevice
                 {
                     discovery.DeviceClass = HassDeviceClass.Battery;
                     discovery.Name = $"{namePrefix} Battery";
+                    discovery.UnitOfMeasurement = "%";
                 })
                 .ConfigureAliveService();
 
