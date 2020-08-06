@@ -20,6 +20,7 @@ _This project is not affiliated with or endorsed by Blue Riiot._
 * Ability to cope with metrics databases, by reporting unchanged values
 * Creates sensors for each Blue device, with their battery status
 * Automatically polls closely to the Blue device's reportings, to get 'live' data
+* Ability to send commands to BlueRiiot2MQTT to interact with BlueRiiot.
 
 Todo:
 
@@ -80,6 +81,14 @@ You can use one of the following tags. Architectures available: `amd64`, `armv7`
 
 For all available tags, see [Docker Hub](https://hub.docker.com/repository/docker/lordmike/blueriiot2mqtt/tags).
 
+# MQTT Commands
+
+It is possible to send certain commands to the BlueRiiot2MQTT application, using MQTT topics. The following commands can be sent.
+
+## Force sync
+**Topic:** (prefix)/commands/force_sync
+
+Sending a message to this topic will force the BR2MQTT app to poll BlueRiiot for new information.
 
 # How
 

@@ -18,6 +18,7 @@ using MBW.HassMQTT.Interfaces;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Nito.AsyncEx;
 
 namespace MBW.BlueRiiot2MQTT.Service
 {
@@ -30,6 +31,7 @@ namespace MBW.BlueRiiot2MQTT.Service
         private readonly BlueRiiotConfiguration _config;
         private readonly Random _random = new Random();
         private readonly TimeSpan _minimumInterval = TimeSpan.FromSeconds(30);
+        private readonly AsyncAutoResetEvent _forceSyncResetEvent = new AsyncAutoResetEvent();
 
         public const string OkMessage = "ok";
         public const string ProblemMessage = "problem";
@@ -49,6 +51,11 @@ namespace MBW.BlueRiiot2MQTT.Service
             _updateManager = updateManager;
             _hassMqttManager = hassMqttManager;
             _config = config.Value;
+        }
+
+        public void ForceSync()
+        {
+            _forceSyncResetEvent.Set();
         }
 
         private TimeSpan CalculateDelay(DateTime lastRun)
@@ -99,7 +106,22 @@ namespace MBW.BlueRiiot2MQTT.Service
                 // Calculate time to next update
                 TimeSpan toDelay = CalculateDelay(lastRun);
 
-                await Task.Delay(toDelay, stoppingToken);
+                // Wait on the force sync reset event, for the specified time.
+                // If either the reset event or the time runs out, we do an update
+                using (CancellationTokenSource cts = new CancellationTokenSource(toDelay))
+                using (CancellationTokenSource linkedToken = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, stoppingToken))
+                {
+                    try
+                    {
+                        await _forceSyncResetEvent.WaitAsync(linkedToken.Token);
+
+                        // We were forced
+                        _logger.LogInformation("Forcing a sync with BlueRiiot");
+                    }
+                    catch (OperationCanceledException)
+                    {
+                    }
+                }
 
                 _logger.LogDebug("Beginning update");
 

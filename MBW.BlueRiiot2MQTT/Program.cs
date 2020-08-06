@@ -2,12 +2,14 @@
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using MBW.BlueRiiot2MQTT.Commands;
 using MBW.BlueRiiot2MQTT.Configuration;
 using MBW.BlueRiiot2MQTT.Features;
 using MBW.BlueRiiot2MQTT.Helpers;
 using MBW.BlueRiiot2MQTT.Service;
 using MBW.HassMQTT;
 using MBW.HassMQTT.CommonServices.AliveAndWill;
+using MBW.HassMQTT.CommonServices.Commands;
 using MBW.HassMQTT.CommonServices.MqttReconnect;
 using MBW.HassMQTT.Extensions;
 using MBW.HassMQTT.Topics;
@@ -105,7 +107,7 @@ namespace MBW.BlueRiiot2MQTT
 
                     return mqttClient;
                 });
-            
+
             // MQTT Services
             services
                 .AddMqttMessageReceiverService()
@@ -119,10 +121,15 @@ namespace MBW.BlueRiiot2MQTT
             // Hass Connected service (MQTT Last Will)
             services
                 .AddHassConnectedEntityService("BlueRiiot2MQTT");
-            
+
             // Hass system services
             services
                 .AddSingleton<HassMqttManager>();
+
+            // Commands
+            services
+                .AddMqttCommandService()
+                .AddMqttCommandHandler<ForceSyncCommand>();
 
             services
                 .Configure<HassConfiguration>(context.Configuration.GetSection("HASS"))
@@ -156,11 +163,12 @@ namespace MBW.BlueRiiot2MQTT
                         .UseUsernamePassword(config.Username, config.Password)
                         .UseHttpClientFactory(httpFactory, "blueriiot");
                 });
-            
+
             services
                 .AddAllFeatureUpdaters()
                 .AddSingleton<FeatureUpdateManager>()
-                .AddHostedService<BlueRiiotMqttService>();
+                .AddSingleton<BlueRiiotMqttService>()
+                .AddHostedService(x => x.GetRequiredService<BlueRiiotMqttService>());
         }
     }
 }
