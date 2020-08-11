@@ -40,7 +40,7 @@ Todo:
 | MQTT__ClientId | | `blueriiot2mqtt` | |
 | MQTT__ReconnectInterval | | `00:00:30` | How long to wait before reconnecting to MQTT |
 | HASS__DiscoveryPrefix | | `homeassistant` | Prefix of HASS discovery topics |
-| HASS__BlueRiiotPrefix | | `blueriiot2mqtt` | Prefix of state and attribute topics |
+| HASS__TopicPrefix | | `blueriiot` | Prefix of state and attribute topics |
 | BlueRiiot__Username | yes | | |
 | BlueRiiot__Password | yes | | |
 | BlueRiiot__UpdateInterval | | 01:00:00 | Fallback update interval, default: `1 hour` |
