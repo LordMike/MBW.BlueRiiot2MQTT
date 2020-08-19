@@ -15,5 +15,10 @@ namespace MBW.BlueRiiot2MQTT.Helpers
                 device.Identifiers = new[] {pool.SwimmingPoolId};
             });
         }
+
+        public static ISensorContainer SetPoolAttributes(this ISensorContainer sensor, SwimmingPool pool)
+        {
+            return sensor.SetAttribute("pool_id", pool.SwimmingPoolId);
+        }
     }
 }

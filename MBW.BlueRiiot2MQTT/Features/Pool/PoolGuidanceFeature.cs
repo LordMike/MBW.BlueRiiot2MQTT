@@ -33,7 +33,9 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
 
         protected override void UpdateInternal(SwimmingPool pool, SwimmingPoolGuidanceGetResponse guidance)
         {
-            ISensorContainer sensor = HassMqttManager.GetSensor(HassUniqueIdBuilder.GetPoolDeviceId(pool), "guidance");
+            ISensorContainer sensor = HassMqttManager
+                .GetSensor(HassUniqueIdBuilder.GetPoolDeviceId(pool), "guidance")
+                .SetPoolAttributes(pool);
 
             if (guidance.Guidance?.IssueToFix == null)
             {

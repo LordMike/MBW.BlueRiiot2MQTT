@@ -17,6 +17,7 @@ _This project is not affiliated with or endorsed by Blue Riiot._
   * Tracks warning / danger levels for all measurements
   * Weather forecast, with temperature, UV index and weather type e.g. 'rain'
   * Notifies when actions need to be done (use the Blue Riiot app to get more details on steps)
+  * Pump schedules, also has commands to set pump schedules
 * Ability to cope with metrics databases, by reporting unchanged values
 * Creates sensors for each Blue device, with their battery status
 * Automatically polls closely to the Blue device's reportings, to get 'live' data
@@ -89,6 +90,19 @@ It is possible to send certain commands to the BlueRiiot2MQTT application, using
 **Topic:** (prefix)/commands/force_sync
 
 Sending a message to this topic will force the BR2MQTT app to poll BlueRiiot for new information.
+
+## Set pump schedule
+**Topic:** (prefix)/commands/pool/(pool_id)/set_pump_schedule
+
+*At present, all times are in UTC timezone.*
+
+Sending a message to this topic will configure the pump schedule for the specified pool. The accepted messages are: `none` - indicates no pump is present; `manual` - indicates the pump runs at manual intervals; or a schedule, as specified below:
+
+> You can specify the intervals at which the pump runs, by making a JSON array of times. This example sets two intervals from `06:00 to 12:00` and `18:00 to 22:00`:
+> 
+> [["06:00", "12:00"],["18:00", "22:00"]]
+
+The `pool_id` can be found on an attribute in most sensors within HASS. It is also used in topics related to values from that pool.
 
 # How
 

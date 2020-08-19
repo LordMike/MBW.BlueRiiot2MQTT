@@ -52,7 +52,7 @@ namespace MBW.BlueRiiot2MQTT.Features.BlueDevice
                 .ConfigureAliveService();
 
             HassMqttManager.ConfigureSensor<MqttSensor>(deviceId, "battery")
-                .ConfigureTopics(HassTopicKind.State)
+                .ConfigureTopics(HassTopicKind.State, HassTopicKind.JsonAttributes)
                 .ConfigureDevice(deviceConfigure)
                 .ConfigureDiscovery(discovery =>
                 {
@@ -63,7 +63,7 @@ namespace MBW.BlueRiiot2MQTT.Features.BlueDevice
                 .ConfigureAliveService();
 
             HassMqttManager.ConfigureSensor<MqttSensor>(deviceId, "status")
-                .ConfigureTopics(HassTopicKind.State)
+                .ConfigureTopics(HassTopicKind.State, HassTopicKind.JsonAttributes)
                 .ConfigureDevice(deviceConfigure)
                 .ConfigureDiscovery(discovery =>
                 {
@@ -76,9 +76,15 @@ namespace MBW.BlueRiiot2MQTT.Features.BlueDevice
         protected override void UpdateInternal(SwimmingPool pool, SwimmingPoolDevice data)
         {
             string deviceId = HassUniqueIdBuilder.GetBlueDeviceId(data);
-            ISensorContainer deviceSensor = HassMqttManager.GetSensor(deviceId, "device");
-            ISensorContainer batterySensor = HassMqttManager.GetSensor(deviceId, "battery");
-            ISensorContainer statusSensor = HassMqttManager.GetSensor(deviceId, "status");
+            ISensorContainer deviceSensor = HassMqttManager
+                .GetSensor(deviceId, "device")
+                .SetPoolAttributes(pool);
+            ISensorContainer batterySensor = HassMqttManager
+                .GetSensor(deviceId, "battery")
+                .SetPoolAttributes(pool);
+            ISensorContainer statusSensor = HassMqttManager
+                .GetSensor(deviceId, "status")
+                .SetPoolAttributes(pool);
 
             // Device
             // Determine last contact

@@ -129,7 +129,8 @@ namespace MBW.BlueRiiot2MQTT
             // Commands
             services
                 .AddMqttCommandService()
-                .AddMqttCommandHandler<ForceSyncCommand>();
+                .AddMqttCommandHandler<ForceSyncCommand>()
+                .AddMqttCommandHandler<SetPumpScheduleCommand>();
 
             services
                 .Configure<HassConfiguration>(context.Configuration.GetSection("HASS"))

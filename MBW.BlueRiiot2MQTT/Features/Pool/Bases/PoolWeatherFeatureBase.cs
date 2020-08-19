@@ -44,9 +44,11 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool.Bases
         {
             ISensorContainer sensor = HassMqttManager.GetSensor(HassUniqueIdBuilder.GetPoolDeviceId(pool), _measurement);
 
-            sensor.SetAttribute("timestamp", obj.Timestamp);
-
             Update(sensor, pool, obj);
+            
+            sensor
+                .SetAttribute("timestamp", obj.Timestamp)
+                .SetPoolAttributes(pool);
         }
 
         protected abstract void Update(ISensorContainer sensor, SwimmingPool pool, SwimmingPoolWeather obj);

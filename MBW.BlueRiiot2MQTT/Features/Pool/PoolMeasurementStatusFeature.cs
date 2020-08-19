@@ -57,7 +57,9 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
             if (!TryGetMeasurement(latest.Data, out SwpLastMeasurements measurement))
                 return;
 
-            ISensorContainer sensor = HassMqttManager.GetSensor(HassUniqueIdBuilder.GetPoolDeviceId(pool), $"{_measurement}_status");
+            ISensorContainer sensor = HassMqttManager
+                .GetSensor(HassUniqueIdBuilder.GetPoolDeviceId(pool), $"{_measurement}_status")
+                .SetPoolAttributes(pool);
 
             MeasurementUtility.AddAttributes(sensor.GetAttributesSender(), measurement);
 
