@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using MBW.BlueRiiot2MQTT.Service;
 using MBW.HassMQTT.CommonServices.Commands;
