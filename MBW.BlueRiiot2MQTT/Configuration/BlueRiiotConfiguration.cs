@@ -8,6 +8,8 @@ namespace MBW.BlueRiiot2MQTT.Configuration
 
         public string Password { get; set; }
 
+        public TimeSpan DiscoveryInterval { get; set; } = TimeSpan.FromHours(12);
+
         public TimeSpan UpdateInterval { get; set; } = TimeSpan.FromHours(1);
 
         public TimeSpan UpdateIntervalJitter { get; set; } = TimeSpan.FromMinutes(2);

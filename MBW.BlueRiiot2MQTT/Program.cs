@@ -7,6 +7,7 @@ using MBW.BlueRiiot2MQTT.Configuration;
 using MBW.BlueRiiot2MQTT.Features;
 using MBW.BlueRiiot2MQTT.Helpers;
 using MBW.BlueRiiot2MQTT.Service;
+using MBW.BlueRiiot2MQTT.Service.PoolUpdater;
 using MBW.HassMQTT;
 using MBW.HassMQTT.CommonServices.AliveAndWill;
 using MBW.HassMQTT.CommonServices.Commands;
@@ -168,6 +169,7 @@ namespace MBW.BlueRiiot2MQTT
             services
                 .AddAllFeatureUpdaters()
                 .AddSingleton<FeatureUpdateManager>()
+                .AddSingleton<SingleBlueRiiotPoolUpdaterFactory>()
                 .AddSingleton<BlueRiiotMqttService>()
                 .AddHostedService(x => x.GetRequiredService<BlueRiiotMqttService>());
         }

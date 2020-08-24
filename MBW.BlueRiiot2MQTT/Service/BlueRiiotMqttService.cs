@@ -1,11 +1,12 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MBW.BlueRiiot2MQTT.Configuration;
-using MBW.BlueRiiot2MQTT.Features;
 using MBW.BlueRiiot2MQTT.HASS;
-using MBW.BlueRiiot2MQTT.Helpers;
+using MBW.BlueRiiot2MQTT.Service.PoolUpdater;
 using MBW.Client.BlueRiiotApi;
 using MBW.Client.BlueRiiotApi.Objects;
 using MBW.Client.BlueRiiotApi.RequestsResponses;
@@ -18,7 +19,6 @@ using MBW.HassMQTT.Interfaces;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nito.AsyncEx;
 
 namespace MBW.BlueRiiot2MQTT.Service
 {
@@ -26,145 +26,83 @@ namespace MBW.BlueRiiot2MQTT.Service
     {
         private readonly ILogger<BlueRiiotMqttService> _logger;
         private readonly BlueClient _blueClient;
-        private readonly FeatureUpdateManager _updateManager;
         private readonly HassMqttManager _hassMqttManager;
+        private readonly SingleBlueRiiotPoolUpdaterFactory _updaterFactory;
         private readonly BlueRiiotConfiguration _config;
-        private readonly Random _random = new Random();
-        private readonly TimeSpan _minimumInterval = TimeSpan.FromSeconds(30);
-        private readonly AsyncAutoResetEvent _forceSyncResetEvent = new AsyncAutoResetEvent();
+        private readonly ConcurrentDictionary<string, SingleBlueRiiotPoolUpdater> _updaters = new ConcurrentDictionary<string, SingleBlueRiiotPoolUpdater>(StringComparer.Ordinal);
 
         public const string OkMessage = "ok";
         public const string ProblemMessage = "problem";
-
-        private DateTime _lastMeasurement = DateTime.MinValue;
-        private TimeSpan? _measureInterval;
 
         public BlueRiiotMqttService(
             ILogger<BlueRiiotMqttService> logger,
             IOptions<BlueRiiotConfiguration> config,
             BlueClient blueClient,
-            FeatureUpdateManager updateManager,
-            HassMqttManager hassMqttManager)
+            HassMqttManager hassMqttManager,
+            SingleBlueRiiotPoolUpdaterFactory updaterFactory)
         {
             _logger = logger;
             _blueClient = blueClient;
-            _updateManager = updateManager;
             _hassMqttManager = hassMqttManager;
+            _updaterFactory = updaterFactory;
             _config = config.Value;
         }
 
         public void ForceSync()
         {
-            _forceSyncResetEvent.Set();
-        }
+            _logger.LogInformation("Forcing a sync for all known pools");
 
-        private TimeSpan CalculateDelay(DateTime lastRun)
-        {
-            bool isFirstRun = lastRun == DateTime.MinValue;
-
-            TimeSpan toDelay;
-            DateTime nextCheck;
-            if (_measureInterval.HasValue)
-            {
-                nextCheck = (_lastMeasurement + _measureInterval.Value)
-                    .AddSeconds(_random.Next(0, (int)_config.UpdateIntervalJitter.TotalSeconds));
-            }
-            else
-            {
-                nextCheck = (lastRun + _config.UpdateInterval)
-                    .AddSeconds(_random.Next(0, (int)_config.UpdateIntervalJitter.TotalSeconds));
-            }
-
-            toDelay = nextCheck - DateTime.UtcNow;
-
-            // Always wait at least Ns, to avoid error-induced loops
-            if (toDelay < _minimumInterval)
-                toDelay = isFirstRun ? TimeSpan.FromSeconds(1) : _minimumInterval;
-
-            if (!isFirstRun)
-            {
-                if (_measureInterval.HasValue)
-                    _logger.LogInformation("New data ready at {DateTime} (interval {Interval}). Waiting {Delay}", nextCheck, _measureInterval.Value, toDelay);
-                else
-                    _logger.LogInformation("Delaying till next check, at {DateTime}, waiting {Delay}", nextCheck, toDelay);
-            }
-
-            return toDelay;
+            foreach (SingleBlueRiiotPoolUpdater updater in _updaters.Values)
+                updater.ForceSync();
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            CreateSystemEntities();
+            ISensorContainer operationalSensor = CreateSystemEntities();
 
-            ISensorContainer operationalSensor = _hassMqttManager.GetSensor(HassUniqueIdBuilder.GetSystemDeviceId(), "api_operational");
-
-            // Update loop
-            DateTime lastRun = DateTime.MinValue;
-
-            while (!stoppingToken.IsCancellationRequested)
+            try
             {
-                // Calculate time to next update
-                TimeSpan toDelay = CalculateDelay(lastRun);
-
-                // Wait on the force sync reset event, for the specified time.
-                // If either the reset event or the time runs out, we do an update
-                using (CancellationTokenSource cts = new CancellationTokenSource(toDelay))
-                using (CancellationTokenSource linkedToken = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, stoppingToken))
+                // Update loop
+                while (!stoppingToken.IsCancellationRequested)
                 {
+                    _logger.LogDebug("Beginning update");
+
                     try
                     {
-                        await _forceSyncResetEvent.WaitAsync(linkedToken.Token);
+                        await PerformUpdate(stoppingToken);
 
-                        // We were forced
-                        _logger.LogInformation("Forcing a sync with BlueRiiot");
+                        // Track API operational status
+                        operationalSensor.SetValue(HassTopicKind.State, OkMessage);
+                        operationalSensor.SetAttribute("last_ok", DateTime.UtcNow.ToString("O"));
                     }
-                    catch (OperationCanceledException)
+                    catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                     {
+                        // Do nothing
                     }
-                }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "An error occurred while performing the update");
 
-                _logger.LogDebug("Beginning update");
+                        // Track API operational status
+                        operationalSensor.SetValue(HassTopicKind.State, ProblemMessage);
+                        operationalSensor.SetAttribute("last_bad", DateTime.UtcNow.ToString("O"));
+                        operationalSensor.SetAttribute("last_bad_status", e.Message);
+                    }
+                    
+                    await Task.Delay(_config.DiscoveryInterval, stoppingToken);
+                }
+            }
+            finally
+            {
+                // Stop all updaters
+                _logger.LogInformation("Stopping all pool updaters");
 
-                try
-                {
-                    await PerformUpdate(stoppingToken);
-
-                    // Track API operational status
-                    operationalSensor.SetValue(HassTopicKind.State, OkMessage);
-                    operationalSensor.SetAttribute("last_ok", DateTime.UtcNow.ToString("O"));
-                }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-                {
-                    // Do nothing
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "An error occurred while performing the update");
-
-                    // Track API operational status
-                    operationalSensor.SetValue(HassTopicKind.State, ProblemMessage);
-                    operationalSensor.SetAttribute("last_bad", DateTime.UtcNow.ToString("O"));
-                    operationalSensor.SetAttribute("last_bad_status", e.Message);
-                }
-
-                try
-                {
-                    await _hassMqttManager.FlushAll(stoppingToken);
-                }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-                {
-                    // Do nothing
-                }
-                catch (Exception e)
-                {
-                    _logger.LogError(e, "An error occurred while pushing updated data to MQTT");
-                }
-
-                lastRun = DateTime.UtcNow;
+                foreach (SingleBlueRiiotPoolUpdater updater in _updaters.Values)
+                    updater.Stop();
             }
         }
 
-        private void CreateSystemEntities()
+        private ISensorContainer CreateSystemEntities()
         {
             _hassMqttManager.ConfigureSensor<MqttBinarySensor>(HassUniqueIdBuilder.GetSystemDeviceId(), "api_operational")
                 .ConfigureTopics(HassTopicKind.State, HassTopicKind.JsonAttributes)
@@ -183,76 +121,45 @@ namespace MBW.BlueRiiot2MQTT.Service
                     discovery.PayloadOff = OkMessage;
                 })
                 .ConfigureAliveService();
+
+            return _hassMqttManager.GetSensor(HassUniqueIdBuilder.GetSystemDeviceId(), "api_operational");
         }
 
         private async Task PerformUpdate(CancellationToken stoppingToken)
         {
             SwimmingPoolGetResponse pools = await _blueClient.GetSwimmingPools(token: stoppingToken);
-            DateTime lastMeasurement = DateTime.MinValue;
-            _measureInterval = null;
 
-            foreach (UserSwimmingPool userPool in pools.Data)
+            // Start any previously unknown pools
+            HashSet<string> expectedPools = _updaters.Keys.ToHashSet(StringComparer.Ordinal);
+
+            foreach (UserSwimmingPool pool in pools.Data)
             {
-                if (userPool.SwimmingPool == null)
+                expectedPools.Remove(pool.SwimmingPoolId);
+
+                if (_updaters.ContainsKey(pool.SwimmingPoolId))
                 {
-                    _logger.LogWarning("Identified an incomplete pool, {name}, maybe it's new and not ready yet", userPool.Name);
+                    _logger.LogTrace("Identified known pool, {Pool}", pool.SwimmingPoolId);
                     continue;
                 }
 
-                List<SwimmingPoolLastMeasurementsGetResponse> measurements = new List<SwimmingPoolLastMeasurementsGetResponse>();
+                // New pool!
+                _logger.LogInformation("Discovered new pool, '{Name}' ({Pool})", pool.Name, pool.SwimmingPoolId);
 
-                SwimmingPool pool = userPool.SwimmingPool;
-                _updateManager.Process(pool, pool);
-
-                _logger.LogDebug("Fetching blue devices for {Id} ({Name})", pool.SwimmingPoolId, pool.Name);
-                SwimmingPoolBlueDevicesGetResponse blueDevices = await _blueClient.GetSwimmingPoolBlueDevices(pool.SwimmingPoolId, stoppingToken);
-
-                foreach (SwimmingPoolDevice blueDevice in blueDevices.Data)
+                _updaters.GetOrAdd(pool.SwimmingPoolId, _ =>
                 {
-                    _logger.LogDebug("Fetching measurements for {Id}, blue {Serial} ({Name})", pool.SwimmingPoolId, blueDevice.BlueDeviceSerial, pool.Name);
-                    _updateManager.Process(pool, blueDevice);
-
-                    SwimmingPoolLastMeasurementsGetResponse blueMeasurement = await _blueClient.GetBlueLastMeasurements(pool.SwimmingPoolId, blueDevice.BlueDeviceSerial, token: stoppingToken);
-
-                    if (blueDevice.BlueDevice.WakePeriod > 0)
-                        _measureInterval = ComparisonHelper.GetMin(_measureInterval, TimeSpan.FromSeconds(blueDevice.BlueDevice.WakePeriod));
-
-                    measurements.Add(blueMeasurement);
-                    lastMeasurement = ComparisonHelper.GetMax(lastMeasurement, blueMeasurement.LastStripTimestamp, blueMeasurement.LastBlueMeasureTimestamp).GetValueOrDefault();
-                }
-
-                _logger.LogDebug("Fetching guidance for {Id} ({Name})", pool.SwimmingPoolId, pool.Name);
-
-                SwimmingPoolGuidanceGetResponse guidance = await _blueClient.GetSwimmingPoolGuidance(pool.SwimmingPoolId, _config.Language, token: stoppingToken);
-                _updateManager.Process(pool, guidance);
-
-                _logger.LogDebug("Fetching measurements for {Id} ({Name})", pool.SwimmingPoolId, pool.Name);
-
-                SwimmingPoolLastMeasurementsGetResponse measurement = await _blueClient.GetSwimmingPoolLastMeasurements(pool.SwimmingPoolId, stoppingToken);
-                measurements.Add(measurement);
-                lastMeasurement = ComparisonHelper.GetMax(lastMeasurement, measurement.LastStripTimestamp, lastMeasurement, measurement.LastBlueMeasureTimestamp).GetValueOrDefault();
-
-                _updateManager.Process(pool, measurements);
-
-                _logger.LogDebug("Fetching weather for {Id} ({Name})", pool.SwimmingPoolId, pool.Name);
-
-                SwimmingPoolWeatherGetResponse weather = await _blueClient.GetSwimmingPoolWeather(pool.SwimmingPoolId, _config.Language, stoppingToken);
-                _updateManager.Process(pool, weather.Data);
-
-                //_logger.LogDebug("Fetching status for {Id} ({Name})", pool.SwimmingPoolId, pool.Name);
-                //SwimmingPoolStatusGetResponse status = await _blueClient.GetSwimmingPoolStatus(pool.SwimmingPoolId, stoppingToken);
-                //_updateManager.Update(pool, status);
+                    SingleBlueRiiotPoolUpdater updater = _updaterFactory.Create(pool.SwimmingPool);
+                    updater.Start();
+                    return updater;
+                });
             }
 
-            if (lastMeasurement > _lastMeasurement)
+            // Remove any leftovers
+            foreach (string poolId in expectedPools)
             {
-                _lastMeasurement = lastMeasurement;
+                _logger.LogWarning("Removing pool that no longer exists, {Pool}", poolId);
 
-                if (_config.ReportUnchangedValues)
-                {
-                    // A new measurement was made, report potentially unchanged values
-                    _hassMqttManager.MarkAllValuesDirty();
-                }
+                if (_updaters.Remove(poolId, out var pool))
+                    pool.Stop();
             }
         }
     }
