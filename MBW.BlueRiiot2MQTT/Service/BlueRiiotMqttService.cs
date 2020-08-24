@@ -88,7 +88,7 @@ namespace MBW.BlueRiiot2MQTT.Service
                         operationalSensor.SetAttribute("last_bad", DateTime.UtcNow.ToString("O"));
                         operationalSensor.SetAttribute("last_bad_status", e.Message);
                     }
-                    
+
                     await Task.Delay(_config.DiscoveryInterval, stoppingToken);
                 }
             }
@@ -134,6 +134,12 @@ namespace MBW.BlueRiiot2MQTT.Service
 
             foreach (UserSwimmingPool pool in pools.Data)
             {
+                if (pool.SwimmingPool == null)
+                {
+                    _logger.LogWarning("Identified an incomplete pool, {name}, maybe it's new and not ready yet", pool.Name);
+                    continue;
+                }
+
                 expectedPools.Remove(pool.SwimmingPoolId);
 
                 if (_updaters.ContainsKey(pool.SwimmingPoolId))

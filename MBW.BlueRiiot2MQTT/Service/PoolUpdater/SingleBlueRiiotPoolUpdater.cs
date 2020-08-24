@@ -169,8 +169,7 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
             _updateManager.Process(pool, pool);
 
             _logger.LogDebug("Fetching blue devices for {Id} ({Name})", pool.SwimmingPoolId, pool.Name);
-            SwimmingPoolBlueDevicesGetResponse blueDevices =
-                await _blueClient.GetSwimmingPoolBlueDevices(pool.SwimmingPoolId, stoppingToken);
+            SwimmingPoolBlueDevicesGetResponse blueDevices = await _blueClient.GetSwimmingPoolBlueDevices(pool.SwimmingPoolId, stoppingToken);
 
             foreach (SwimmingPoolDevice blueDevice in blueDevices.Data)
             {
@@ -187,10 +186,10 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
                 // Track the last measurement time in order to calculate the next.
                 // Manual bluetooth measurements do not affect the interval
                 lastAutomaticMeasurement = ComparisonHelper.GetMax(lastAutomaticMeasurement, blueDevice.BlueDevice.LastMeasureMessageSigfox).GetValueOrDefault();
-                
-                lastMeasurement = ComparisonHelper.GetMax(lastMeasurement, 
-                    blueDevice.BlueDevice.LastMeasureMessage, 
-                    blueDevice.BlueDevice.LastMeasureMessageBle, 
+
+                lastMeasurement = ComparisonHelper.GetMax(lastMeasurement,
+                    blueDevice.BlueDevice.LastMeasureMessage,
+                    blueDevice.BlueDevice.LastMeasureMessageBle,
                     blueDevice.BlueDevice.LastMeasureMessageSigfox).GetValueOrDefault();
             }
 
@@ -203,9 +202,9 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
 
             SwimmingPoolLastMeasurementsGetResponse measurement = await _blueClient.GetSwimmingPoolLastMeasurements(pool.SwimmingPoolId, stoppingToken);
             measurements.Add(measurement);
-            
-            lastMeasurement = ComparisonHelper.GetMax(lastMeasurement, 
-                measurement.LastStripTimestamp, 
+
+            lastMeasurement = ComparisonHelper.GetMax(lastMeasurement,
+                measurement.LastStripTimestamp,
                 measurement.LastBlueMeasureTimestamp).GetValueOrDefault();
 
             _updateManager.Process(pool, measurements);
