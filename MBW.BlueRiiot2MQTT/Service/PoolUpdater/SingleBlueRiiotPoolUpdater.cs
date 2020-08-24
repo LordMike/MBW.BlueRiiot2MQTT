@@ -31,14 +31,12 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
         private readonly SwimmingPool _pool;
         private readonly FeatureUpdateManager _updateManager;
         private readonly BlueRiiotConfiguration _config;
-        private readonly CancellationTokenSource _cancellationToken = new CancellationTokenSource();
+        private readonly CancellationTokenSource _stoppingToken = new CancellationTokenSource();
         private readonly Task _backgroundTask;
         private readonly AsyncAutoResetEvent _forceSyncResetEvent = new AsyncAutoResetEvent();
-        private readonly Random _random = new Random();
-        private readonly TimeSpan _minimumInterval = TimeSpan.FromSeconds(30);
+        private readonly DelayCalculator _delayCalculator;
 
         private DateTime _lastMeasurement = DateTime.MinValue;
-        private TimeSpan? _measureInterval;
 
         public SingleBlueRiiotPoolUpdater(ILogger logger, HassMqttManager hassMqttManager, FeatureUpdateManager updateManager, BlueClient blueClient, BlueRiiotConfiguration config, SwimmingPool pool)
         {
@@ -48,8 +46,9 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
             _updateManager = updateManager;
             _blueClient = blueClient;
             _config = config;
+            _delayCalculator = new DelayCalculator(_logger, config, pool.Name);
 
-            _backgroundTask = new Task(async () => await Run(), _cancellationToken.Token);
+            _backgroundTask = new Task(async () => await Run(), _stoppingToken.Token);
         }
 
         public void Start()
@@ -59,7 +58,7 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
 
         public void Stop()
         {
-            _cancellationToken.Cancel();
+            _stoppingToken.Cancel();
         }
 
         public void ForceSync()
@@ -72,17 +71,17 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
             ISensorContainer operationalSensor = CreateSystemEntities();
 
             // Update loop
-            DateTime lastRun = DateTime.MinValue;
+            DateTime? lastRun = null;
 
-            while (!_cancellationToken.Token.IsCancellationRequested)
+            while (!_stoppingToken.Token.IsCancellationRequested)
             {
                 // Calculate time to next update
-                TimeSpan toDelay = CalculateDelay(lastRun);
+                TimeSpan toDelay = _delayCalculator.CalculateNextRun(lastRun);
 
                 // Wait on the force sync reset event, for the specified time.
                 // If either the reset event or the time runs out, we do an update
                 using (CancellationTokenSource cts = new CancellationTokenSource(toDelay))
-                using (CancellationTokenSource linkedToken = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, _cancellationToken.Token))
+                using (CancellationTokenSource linkedToken = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, _stoppingToken.Token))
                 {
                     try
                     {
@@ -100,13 +99,13 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
 
                 try
                 {
-                    await PerformUpdate(_cancellationToken.Token);
+                    await PerformUpdate(_stoppingToken.Token);
 
                     // Track API operational status
                     operationalSensor.SetValue(HassTopicKind.State, BlueRiiotMqttService.OkMessage);
                     operationalSensor.SetAttribute("last_ok", DateTime.UtcNow.ToString("O"));
                 }
-                catch (OperationCanceledException) when (_cancellationToken.Token.IsCancellationRequested)
+                catch (OperationCanceledException) when (_stoppingToken.Token.IsCancellationRequested)
                 {
                     // Do nothing
                 }
@@ -122,9 +121,9 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
 
                 try
                 {
-                    await _hassMqttManager.FlushAll(_cancellationToken.Token);
+                    await _hassMqttManager.FlushAll(_stoppingToken.Token);
                 }
-                catch (OperationCanceledException) when (_cancellationToken.Token.IsCancellationRequested)
+                catch (OperationCanceledException) when (_stoppingToken.Token.IsCancellationRequested)
                 {
                     // Do nothing
                 }
@@ -158,43 +157,11 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
             return _hassMqttManager.GetSensor(deviceId, entityId);
         }
 
-        private TimeSpan CalculateDelay(DateTime lastRun)
-        {
-            bool isFirstRun = lastRun == DateTime.MinValue;
-
-            TimeSpan toDelay;
-            DateTime nextCheck;
-            if (_measureInterval.HasValue)
-            {
-                nextCheck = _lastMeasurement + _measureInterval.Value;
-            }
-            else
-            {
-                nextCheck = lastRun + _config.UpdateInterval;
-            }
-
-            nextCheck = nextCheck.AddSeconds(_random.Next(0, (int)_config.UpdateIntervalJitter.TotalSeconds));
-            toDelay = nextCheck - DateTime.UtcNow;
-
-            // Always wait at least Ns, to avoid error-induced loops
-            if (toDelay < _minimumInterval)
-                toDelay = isFirstRun ? TimeSpan.FromSeconds(1) : _minimumInterval;
-
-            if (!isFirstRun)
-            {
-                if (_measureInterval.HasValue)
-                    _logger.LogInformation("New data ready for pool '{Pool}' at {DateTime} (interval {Interval}). Waiting {Delay}", _pool.Name, nextCheck, _measureInterval.Value, toDelay);
-                else
-                    _logger.LogInformation("Delaying till next check on pool '{Pool}', at {DateTime}, waiting {Delay}", _pool.Name, nextCheck, toDelay);
-            }
-
-            return toDelay;
-        }
-
         private async Task PerformUpdate(CancellationToken stoppingToken)
         {
+            DateTime lastAutomaticMeasurement = DateTime.MinValue;
             DateTime lastMeasurement = DateTime.MinValue;
-            _measureInterval = null;
+            TimeSpan? measureInterval = null;
 
             List<SwimmingPoolLastMeasurementsGetResponse> measurements = new List<SwimmingPoolLastMeasurementsGetResponse>();
 
@@ -213,10 +180,18 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
                 SwimmingPoolLastMeasurementsGetResponse blueMeasurement = await _blueClient.GetBlueLastMeasurements(pool.SwimmingPoolId, blueDevice.BlueDeviceSerial, token: stoppingToken);
 
                 if (blueDevice.BlueDevice.WakePeriod > 0)
-                    _measureInterval = ComparisonHelper.GetMin(_measureInterval, TimeSpan.FromSeconds(blueDevice.BlueDevice.WakePeriod));
+                    measureInterval = ComparisonHelper.GetMin(measureInterval, TimeSpan.FromSeconds(blueDevice.BlueDevice.WakePeriod));
 
                 measurements.Add(blueMeasurement);
-                lastMeasurement = ComparisonHelper.GetMax(lastMeasurement, blueMeasurement.LastStripTimestamp, blueMeasurement.LastBlueMeasureTimestamp).GetValueOrDefault();
+
+                // Track the last measurement time in order to calculate the next.
+                // Manual bluetooth measurements do not affect the interval
+                lastAutomaticMeasurement = ComparisonHelper.GetMax(lastAutomaticMeasurement, blueDevice.BlueDevice.LastMeasureMessageSigfox).GetValueOrDefault();
+                
+                lastMeasurement = ComparisonHelper.GetMax(lastMeasurement, 
+                    blueDevice.BlueDevice.LastMeasureMessage, 
+                    blueDevice.BlueDevice.LastMeasureMessageBle, 
+                    blueDevice.BlueDevice.LastMeasureMessageSigfox).GetValueOrDefault();
             }
 
             _logger.LogDebug("Fetching guidance for {Id} ({Name})", pool.SwimmingPoolId, pool.Name);
@@ -228,8 +203,10 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
 
             SwimmingPoolLastMeasurementsGetResponse measurement = await _blueClient.GetSwimmingPoolLastMeasurements(pool.SwimmingPoolId, stoppingToken);
             measurements.Add(measurement);
-
-            lastMeasurement = ComparisonHelper.GetMax(lastMeasurement, measurement.LastStripTimestamp, lastMeasurement, measurement.LastBlueMeasureTimestamp).GetValueOrDefault();
+            
+            lastMeasurement = ComparisonHelper.GetMax(lastMeasurement, 
+                measurement.LastStripTimestamp, 
+                measurement.LastBlueMeasureTimestamp).GetValueOrDefault();
 
             _updateManager.Process(pool, measurements);
 
@@ -241,6 +218,9 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
             //_logger.LogDebug("Fetching status for {Id} ({Name})", pool.SwimmingPoolId, pool.Name);
             //SwimmingPoolStatusGetResponse status = await _blueClient.GetSwimmingPoolStatus(pool.SwimmingPoolId, stoppingToken);
             //_updateManager.Update(pool, status);
+
+            _delayCalculator.TrackMeasureInterval(measureInterval);
+            _delayCalculator.TrackLastAutoMeasurement(lastAutomaticMeasurement);
 
             if (lastMeasurement > _lastMeasurement)
             {
