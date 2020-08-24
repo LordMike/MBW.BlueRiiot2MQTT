@@ -44,6 +44,7 @@ Todo:
 | HASS__TopicPrefix | | `blueriiot` | Prefix of state and attribute topics |
 | BlueRiiot__Username | yes | | |
 | BlueRiiot__Password | yes | | |
+| BlueRiiot__DiscoveryInterval | | 12:00:00 | How often new/removed pools should be checked, default: `12 hours` |
 | BlueRiiot__UpdateInterval | | 01:00:00 | Fallback update interval, default: `1 hour` |
 | BlueRiiot__UpdateIntervalJitter | | 00:02:00 | Update interval jitter, when BR reports reading interval, default: `2 minutes` |
 | BlueRiiot__Language | | `en` | Language for the API. Used for messages from BlueRiiot |
