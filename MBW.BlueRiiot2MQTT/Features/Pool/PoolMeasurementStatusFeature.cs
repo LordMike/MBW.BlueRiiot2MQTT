@@ -102,7 +102,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
         [UsedImplicitly]
         internal class PoolConductivityFeature : PoolMeasurementStatusFeature
         {
-            public PoolConductivityFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Conductivity", "conductivity")
+            public PoolConductivityFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Conductivity status", "conductivity")
             {
             }
         }
@@ -110,7 +110,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
         [UsedImplicitly]
         internal class PoolOrpFeature : PoolMeasurementStatusFeature
         {
-            public PoolOrpFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "ORP", "orp")
+            public PoolOrpFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "OR statusP", "orp")
             {
             }
         }
@@ -118,7 +118,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
         [UsedImplicitly]
         internal class PoolSalinityFeature : PoolMeasurementStatusFeature
         {
-            public PoolSalinityFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Salinity", "salinity")
+            public PoolSalinityFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Salinity status", "salinity")
             {
             }
         }
@@ -126,7 +126,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
         [UsedImplicitly]
         internal class PoolFreeChlorineFeature : PoolMeasurementStatusFeature
         {
-            public PoolFreeChlorineFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Free Chlorine", "fcl")
+            public PoolFreeChlorineFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Free Chlorine status", "fcl")
             {
             }
         }
@@ -134,7 +134,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
         [UsedImplicitly]
         internal class PoolFreeBromineFeature : PoolMeasurementStatusFeature
         {
-            public PoolFreeBromineFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Free Bromine", "fbr")
+            public PoolFreeBromineFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Free Bromine status", "fbr")
             {
             }
         }
