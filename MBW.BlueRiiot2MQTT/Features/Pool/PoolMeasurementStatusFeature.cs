@@ -110,7 +110,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
         [UsedImplicitly]
         internal class PoolOrpFeature : PoolMeasurementStatusFeature
         {
-            public PoolOrpFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "OR statusP", "orp")
+            public PoolOrpFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "ORP status", "orp")
             {
             }
         }
