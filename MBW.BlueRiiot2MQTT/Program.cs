@@ -125,7 +125,11 @@ namespace MBW.BlueRiiot2MQTT
 
             // Hass system services
             services
-                .AddSingleton<HassMqttManager>();
+                .AddHassMqttManager(configuration =>
+                {
+                    BlueRiiotHassConfiguration blueRiiotConfig = context.Configuration.GetSection("HASS").Get<BlueRiiotHassConfiguration>();
+                    configuration.SendDiscoveryDocuments = blueRiiotConfig.EnableHASSDiscovery;
+                });
 
             // Commands
             services
@@ -134,6 +138,7 @@ namespace MBW.BlueRiiot2MQTT
                 .AddMqttCommandHandler<SetPumpScheduleCommand>();
 
             services
+                .Configure<BlueRiiotHassConfiguration>(context.Configuration.GetSection("HASS"))
                 .Configure<HassConfiguration>(context.Configuration.GetSection("HASS"))
                 .Configure<BlueRiiotConfiguration>(context.Configuration.GetSection("BlueRiiot"))
                 .Configure<ProxyConfiguration>(context.Configuration.GetSection("Proxy"))

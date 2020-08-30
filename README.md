@@ -42,6 +42,7 @@ Todo:
 | MQTT__ReconnectInterval | | `00:00:30` | How long to wait before reconnecting to MQTT |
 | HASS__DiscoveryPrefix | | `homeassistant` | Prefix of HASS discovery topics |
 | HASS__TopicPrefix | | `blueriiot` | Prefix of state and attribute topics |
+| HASS__EnableHASSDiscovery | | `true` | Enable or disable the HASS discovery documents, disable with `false` |
 | BlueRiiot__Username | yes | | |
 | BlueRiiot__Password | yes | | |
 | BlueRiiot__DiscoveryInterval | | 12:00:00 | How often new/removed pools should be checked, default: `12 hours` |
