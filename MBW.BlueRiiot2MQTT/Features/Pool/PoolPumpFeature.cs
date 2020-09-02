@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using JetBrains.Annotations;
 using MBW.BlueRiiot2MQTT.HASS;
 using MBW.BlueRiiot2MQTT.Helpers;

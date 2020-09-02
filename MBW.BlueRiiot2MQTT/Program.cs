@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using MBW.BlueRiiot2MQTT.Commands;
 using MBW.BlueRiiot2MQTT.Configuration;
@@ -9,18 +8,14 @@ using MBW.BlueRiiot2MQTT.Helpers;
 using MBW.BlueRiiot2MQTT.Service;
 using MBW.BlueRiiot2MQTT.Service.PoolUpdater;
 using MBW.HassMQTT;
-using MBW.HassMQTT.CommonServices.AliveAndWill;
+using MBW.HassMQTT.CommonServices;
 using MBW.HassMQTT.CommonServices.Commands;
 using MBW.HassMQTT.CommonServices.MqttReconnect;
-using MBW.HassMQTT.Extensions;
 using MBW.HassMQTT.Topics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MQTTnet;
-using MQTTnet.Client;
-using MQTTnet.Client.Options;
 using Polly;
 using Serilog;
 using WebProxy = System.Net.WebProxy;
@@ -69,67 +64,14 @@ namespace MBW.BlueRiiot2MQTT
         private static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
         {
             services
-                .Configure<MqttConfiguration>(context.Configuration.GetSection("MQTT"))
-                .AddMqttClientFactoryWithLogging()
-                .AddSingleton<IMqttClientOptions>(provider =>
-                {
-                    MqttConfiguration mqttConfig = provider.GetOptions<MqttConfiguration>();
-
-                    // Prepare options
-                    MqttClientOptionsBuilder optionsBuilder = new MqttClientOptionsBuilder()
-                        .WithTcpServer(mqttConfig.Server, mqttConfig.Port)
-                        .WithCleanSession(false)
-                        .WithClientId(mqttConfig.ClientId)
-                        .ConfigureHassConnectedEntityServiceLastWill(provider);
-
-                    if (!string.IsNullOrEmpty(mqttConfig.Username))
-                        optionsBuilder.WithCredentials(mqttConfig.Username, mqttConfig.Password);
-
-                    if (mqttConfig.KeepAlivePeriod.HasValue)
-                        optionsBuilder.WithKeepAlivePeriod(mqttConfig.KeepAlivePeriod.Value);
-
-                    return optionsBuilder.Build();
-                })
-                .AddSingleton<IMqttClient>(provider =>
-                {
-                    // TODO: Support TLS & client certs
-                    IHostApplicationLifetime appLifetime = provider.GetRequiredService<IHostApplicationLifetime>();
-                    CancellationToken stoppingtoken = appLifetime.ApplicationStopping;
-
-                    IMqttFactory factory = provider.GetRequiredService<IMqttFactory>();
-                    IMqttClientOptions options = provider.GetRequiredService<IMqttClientOptions>();
-                    IMqttClient mqttClient = factory.CreateMqttClient();
-
-                    // Hook up event handlers
-                    mqttClient.ConfigureMqttEvents(provider, stoppingtoken);
-
-                    // Connect
-                    mqttClient.ConnectAsync(options, stoppingtoken);
-
-                    return mqttClient;
-                });
-
-            // MQTT Services
-            services
-                .AddMqttMessageReceiverService()
-                .AddMqttEvents();
-
-            // MQTT Reconnect service
-            services
-                .AddMqttReconnectService()
-                .Configure<MqttReconnectionServiceConfig>(context.Configuration.GetSection("MQTT"));
-
-            // Hass Connected service (MQTT Last Will)
-            services
-                .AddHassConnectedEntityService("BlueRiiot2MQTT");
-
-            // Hass system services
-            services
-                .AddHassMqttManager(configuration =>
+                .AddAndConfigureMqtt("BlueRiiot2MQTT", configuration =>
                 {
                     BlueRiiotHassConfiguration blueRiiotConfig = context.Configuration.GetSection("HASS").Get<BlueRiiotHassConfiguration>();
                     configuration.SendDiscoveryDocuments = blueRiiotConfig.EnableHASSDiscovery;
-                });
+                })
+                .Configure<CommonMqttConfiguration>(x=>x.ClientId = "blueriiot2mqtt")
+                .Configure<CommonMqttConfiguration>( context.Configuration.GetSection("MQTT"))
+                .Configure<MqttReconnectionServiceConfig>(context.Configuration.GetSection("MQTT"));
 
             // Commands
             services
