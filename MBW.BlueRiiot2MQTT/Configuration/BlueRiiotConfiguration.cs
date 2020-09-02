@@ -14,6 +14,8 @@ namespace MBW.BlueRiiot2MQTT.Configuration
 
         public TimeSpan UpdateIntervalJitter { get; set; } = TimeSpan.FromMinutes(2);
 
+        public TimeSpan MaxBackoffInterval { get; set; } = TimeSpan.FromHours(3);
+
         public string Language { get; set; }
 
         public bool ReportUnchangedValues { get; set; } = false;

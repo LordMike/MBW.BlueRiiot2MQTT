@@ -7,7 +7,6 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
     internal class DelayCalculator
     {
         private readonly TimeSpan _minimumInterval = TimeSpan.FromMinutes(1);
-        private readonly TimeSpan _maxBackoffInterval = TimeSpan.FromHours(3);
         private readonly Random _random = new Random();
         private readonly ILogger _logger;
         private readonly BlueRiiotConfiguration _config;
@@ -75,8 +74,8 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
                 int cappedCounter = Math.Clamp(_minimumIntervalUsedCounter, 1, 30);
                 TimeSpan backoffDelay = _minimumInterval * (int)Math.Pow(cappedCounter, 2);
 
-                if (backoffDelay > _maxBackoffInterval)
-                    backoffDelay = _maxBackoffInterval;
+                if (backoffDelay >  _config.MaxBackoffInterval)
+                    backoffDelay =  _config.MaxBackoffInterval;
 
                 nextCheck = DateTime.UtcNow + backoffDelay;
                 delay = nextCheck - DateTime.UtcNow;

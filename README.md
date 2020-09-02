@@ -48,6 +48,7 @@ Todo:
 | BlueRiiot__DiscoveryInterval | | 12:00:00 | How often new/removed pools should be checked, default: `12 hours` |
 | BlueRiiot__UpdateInterval | | 01:00:00 | Fallback update interval, default: `1 hour` |
 | BlueRiiot__UpdateIntervalJitter | | 00:02:00 | Update interval jitter, when BR reports reading interval, default: `2 minutes` |
+| BlueRiiot__MaxBackoffInterval | | 03:00:00 | When the Blue device is not reporting data as it should, BlueRiiot2MQTT will backoff up to this value. Default: `3 hours` |
 | BlueRiiot__Language | | `en` | Language for the API. Used for messages from BlueRiiot |
 | BlueRiiot__ReportUnchangedValues | | `false` | Send unchanged values |
 | Proxy__Uri | | | Set this to pass BlueRiiot API calls through an HTTP proxy |
