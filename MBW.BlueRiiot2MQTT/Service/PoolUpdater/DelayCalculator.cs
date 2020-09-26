@@ -15,12 +15,18 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
         private TimeSpan? _measurementInterval;
         private DateTime? _lastAutoMeasurement;
         private int _minimumIntervalUsedCounter;
+        private bool _anyDeviceAwake;
 
         public DelayCalculator(ILogger logger, BlueRiiotConfiguration config, string poolName)
         {
             _logger = logger;
             _config = config;
             _poolName = poolName;
+        }
+
+        public void TrackSleepState(bool anyDeviceAwake)
+        {
+            _anyDeviceAwake = anyDeviceAwake;
         }
 
         public void TrackMeasureInterval(TimeSpan? interval)
@@ -45,7 +51,7 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
             }
 
             DateTime nextCheck;
-            if (_measurementInterval.HasValue && _lastAutoMeasurement.HasValue)
+            if (_measurementInterval.HasValue && _lastAutoMeasurement.HasValue && _anyDeviceAwake)
             {
                 nextCheck = _lastAutoMeasurement.Value + _measurementInterval.Value;
             }
@@ -74,8 +80,8 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
                 int cappedCounter = Math.Clamp(_minimumIntervalUsedCounter, 1, 30);
                 TimeSpan backoffDelay = _minimumInterval * (int)Math.Pow(cappedCounter, 2);
 
-                if (backoffDelay >  _config.MaxBackoffInterval)
-                    backoffDelay =  _config.MaxBackoffInterval;
+                if (backoffDelay > _config.MaxBackoffInterval)
+                    backoffDelay = _config.MaxBackoffInterval;
 
                 nextCheck = DateTime.UtcNow + backoffDelay;
                 delay = nextCheck - DateTime.UtcNow;

@@ -67,7 +67,6 @@ namespace MBW.BlueRiiot2MQTT.Features.BlueDevice
                 .ConfigureDevice(deviceConfigure)
                 .ConfigureDiscovery(discovery =>
                 {
-                    discovery.DeviceClass = HassDeviceClass.Battery;
                     discovery.Name = $"{namePrefix} Status";
                 })
                 .ConfigureAliveService();

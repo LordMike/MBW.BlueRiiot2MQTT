@@ -171,6 +171,7 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
             _logger.LogDebug("Fetching blue devices for {Id} ({Name})", pool.SwimmingPoolId, pool.Name);
             SwimmingPoolBlueDevicesGetResponse blueDevices = await _blueClient.GetSwimmingPoolBlueDevices(pool.SwimmingPoolId, stoppingToken);
 
+            bool anyBlueDeviceIsAwake = false;
             foreach (SwimmingPoolDevice blueDevice in blueDevices.Data)
             {
                 _logger.LogDebug("Fetching measurements for {Id}, blue {Serial} ({Name})", pool.SwimmingPoolId, blueDevice.BlueDeviceSerial, pool.Name);
@@ -191,6 +192,9 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
                     blueDevice.BlueDevice.LastMeasureMessage,
                     blueDevice.BlueDevice.LastMeasureMessageBle,
                     blueDevice.BlueDevice.LastMeasureMessageSigfox).GetValueOrDefault();
+
+                // Track sleep states
+                anyBlueDeviceIsAwake |= blueDevice.BlueDevice.SleepState == "awake";
             }
 
             _logger.LogDebug("Fetching guidance for {Id} ({Name})", pool.SwimmingPoolId, pool.Name);
@@ -220,6 +224,7 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
 
             _delayCalculator.TrackMeasureInterval(measureInterval);
             _delayCalculator.TrackLastAutoMeasurement(lastAutomaticMeasurement);
+            _delayCalculator.TrackSleepState(anyBlueDeviceIsAwake);
 
             if (lastMeasurement > _lastMeasurement)
             {
