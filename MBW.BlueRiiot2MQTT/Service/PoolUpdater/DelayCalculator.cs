@@ -57,7 +57,11 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
             }
             else
             {
-                nextCheck = lastRun.Value + _config.UpdateInterval;
+                // In case all devices are asleep, we can use a different update interval
+                if (_anyDeviceAwake)
+                    nextCheck = lastRun.Value + _config.UpdateInterval;
+                else
+                    nextCheck = lastRun.Value + _config.UpdateIntervalWhenAllDevicesAsleep.GetValueOrDefault(_config.UpdateInterval);
             }
 
             // Add random jitter
