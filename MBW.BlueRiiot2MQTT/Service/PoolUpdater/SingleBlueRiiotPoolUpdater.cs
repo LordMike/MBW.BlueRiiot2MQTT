@@ -71,30 +71,8 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
             ISensorContainer operationalSensor = CreateSystemEntities();
 
             // Update loop
-            DateTime? lastRun = null;
-
             while (!_stoppingToken.Token.IsCancellationRequested)
             {
-                // Calculate time to next update
-                TimeSpan toDelay = _delayCalculator.CalculateNextRun(lastRun);
-
-                // Wait on the force sync reset event, for the specified time.
-                // If either the reset event or the time runs out, we do an update
-                using (CancellationTokenSource cts = new CancellationTokenSource(toDelay))
-                using (CancellationTokenSource linkedToken = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, _stoppingToken.Token))
-                {
-                    try
-                    {
-                        await _forceSyncResetEvent.WaitAsync(linkedToken.Token);
-
-                        // We were forced
-                        _logger.LogDebug("Forcing a sync for pool {Pool} with BlueRiiot", _pool.SwimmingPoolId);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                    }
-                }
-
                 _logger.LogDebug("Beginning update for pool {Pool}", _pool.SwimmingPoolId);
 
                 try
@@ -103,7 +81,7 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
 
                     // Track API operational status
                     operationalSensor.SetValue(HassTopicKind.State, BlueRiiotMqttService.OkMessage);
-                    operationalSensor.SetAttribute("last_ok", DateTime.UtcNow.ToString("O"));
+                    operationalSensor.SetAttribute("last_ok", DateTime.UtcNow);
                 }
                 catch (OperationCanceledException) when (_stoppingToken.Token.IsCancellationRequested)
                 {
@@ -115,9 +93,15 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
 
                     // Track API operational status
                     operationalSensor.SetValue(HassTopicKind.State, BlueRiiotMqttService.ProblemMessage);
-                    operationalSensor.SetAttribute("last_bad", DateTime.UtcNow.ToString("O"));
+                    operationalSensor.SetAttribute("last_bad", DateTime.UtcNow);
                     operationalSensor.SetAttribute("last_bad_status", e.Message);
                 }
+
+                // Calculate time to next update
+                TimeSpan runDelay = _delayCalculator.CalculateNextRun(DateTime.UtcNow);
+                DateTime runNext = DateTime.UtcNow + runDelay;
+
+                operationalSensor.SetAttribute("next_run", runNext);
 
                 try
                 {
@@ -132,7 +116,22 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
                     _logger.LogError(e, "An error occurred while pushing updated data to MQTT for pool {Pool}", _pool.SwimmingPoolId);
                 }
 
-                lastRun = DateTime.UtcNow;
+                // Wait on the force sync reset event, for the specified time.
+                // If either the reset event or the time runs out, we do an update
+                using (CancellationTokenSource cts = new CancellationTokenSource(runDelay))
+                using (CancellationTokenSource linkedToken = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, _stoppingToken.Token))
+                {
+                    try
+                    {
+                        await _forceSyncResetEvent.WaitAsync(linkedToken.Token);
+
+                        // We were forced
+                        _logger.LogDebug("Forcing a sync for pool {Pool} with BlueRiiot", _pool.SwimmingPoolId);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                    }
+                }
             }
         }
 
