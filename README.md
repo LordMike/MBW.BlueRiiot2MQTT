@@ -28,6 +28,48 @@ Todo:
 * Identify MIA Blue Connects
 * Get more detailed states from Blue Connect (warnings and errors)
 
+# Running it / Docker images
+
+This software is distributed as ready-to-run docker images. Use one of the methods below to install it:
+
+* Run directly using the docker CLI
+* Run using docker-compose
+* Install into HASS using this HASSIO addon
+
+## Run in Docker CLI
+
+> docker run -d -e MQTT__Server=myqueue.local -e BlueRiiot__Username=myuser -e BlueRiiot__Password=mypassword lordmike/blueriiot2mqtt:latest
+
+## Run in Docker Compose
+
+```yaml
+# docker-compose.yml
+version: '2.3'
+
+services:
+  blueriiot2mqtt:
+    image: lordmike/blueriiot2mqtt:latest
+    environment:
+      MQTT__Server: myqueue.local
+      BlueRiiot__Username: myuser
+      BlueRiiot__Password: mypassword
+```
+
+## HASSIO add-on
+
+I've prepared a repository [with a HASSIO addon](https://github.com/LordMike/hass-addons/) that you can install. 
+
+## Available tags
+
+You can use one of the following tags. Architectures available: `amd64`, `armv7` and `aarch64`
+
+* `latest` (latest, multi-arch)
+* `ARCH-latest` (latest, specific architecture)
+* `vA.B.C` (specific version, multi-arch)
+* `ARCH-vA.B.C` (specific version, specific architecture)
+
+For all available tags, see [Docker Hub](https://hub.docker.com/repository/docker/lordmike/blueriiot2mqtt/tags).
+
 # Setup
 
 ## Environment Variables
@@ -53,38 +95,6 @@ Todo:
 | BlueRiiot__Language | | `en` | Language for the API. Used for messages from BlueRiiot |
 | BlueRiiot__ReportUnchangedValues | | `false` | Send unchanged values |
 | Proxy__Uri | | | Set this to pass BlueRiiot API calls through an HTTP proxy |
-
-# Docker images
-
-## Run in Docker CLI
-
-> docker run -d -e MQTT__Server=myqueue.local -e BlueRiiot__Username=myuser -e BlueRiiot__Password=mypassword lordmike/blueriiot2mqtt:latest
-
-## Run in Docker Compose
-
-```yaml
-# docker-compose.yml
-version: '2.3'
-
-services:
-  blueriiot2mqtt:
-    image: lordmike/blueriiot2mqtt:latest
-    environment:
-      MQTT__Server: myqueue.local
-      BlueRiiot__Username: myuser
-      BlueRiiot__Password: mypassword
-```
-
-## Available tags
-
-You can use one of the following tags. Architectures available: `amd64`, `armv7` and `aarch64`
-
-* `latest` (latest, multi-arch)
-* `ARCH-latest` (latest, specific architecture)
-* `vA.B.C` (specific version, multi-arch)
-* `ARCH-vA.B.C` (specific version, specific architecture)
-
-For all available tags, see [Docker Hub](https://hub.docker.com/repository/docker/lordmike/blueriiot2mqtt/tags).
 
 # MQTT Commands
 
