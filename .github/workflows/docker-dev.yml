@@ -10,10 +10,10 @@ jobs:
 
     steps:
     - name: Prep docker experimentals
-      run: echo ::set-env name=DOCKER_CLI_EXPERIMENTAL::enabled
+      run: echo "DOCKER_CLI_EXPERIMENTAL=enabled" >> $GITHUB_ENV
     
     - name: Prep GIT_TAG
-      run: echo ::set-env name=GIT_TAG::${GITHUB_REF#refs/*/}
+      run: echo "GIT_TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
     
     - uses: actions/checkout@v2
     
