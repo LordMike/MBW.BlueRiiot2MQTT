@@ -100,7 +100,7 @@ namespace MBW.BlueRiiot2MQTT.Features.BlueDevice
             deviceSensor.SetAttribute("serial_number", data.BlueDevice.Sn);
             deviceSensor.SetAttribute("wake_interval", data.BlueDevice.WakePeriod);
             deviceSensor.SetAttribute("firmware", data.BlueDevice.FwVersionPsoc);
-            deviceSensor.SetAttribute("firmware_installed", data.BlueDevice.FwVersionHistory.OrderByDescending(s => s.Timestamp).Select(s => s.Timestamp).FirstOrDefault());
+            deviceSensor.SetAttribute("firmware_installed", data.BlueDevice.FwVersionHistory?.OrderByDescending(s => s.Timestamp).Select(s => s.Timestamp).FirstOrDefault());
 
             // Battery
             if (data.BlueDevice.BatteryLow)
