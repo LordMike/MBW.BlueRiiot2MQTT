@@ -77,6 +77,7 @@ namespace MBW.BlueRiiot2MQTT
             services
                 .AddMqttCommandService()
                 .AddMqttCommandHandler<ForceSyncCommand>()
+                .AddMqttCommandHandler<ReleaseLatestMeasurementCommand>()
                 .AddMqttCommandHandler<SetPumpScheduleCommand>();
 
             services
