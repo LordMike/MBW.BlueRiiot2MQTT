@@ -2,7 +2,7 @@ name: Docker (release) build and push
 
 on:
   push:
-    tags: [ v*, test-* ]
+    tags: [ 0.*, test-* ]
 
 jobs:
   build:
