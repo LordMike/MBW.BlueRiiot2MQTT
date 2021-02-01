@@ -10,7 +10,6 @@ using MBW.BlueRiiot2MQTT.Service.PoolUpdater;
 using MBW.HassMQTT;
 using MBW.HassMQTT.CommonServices;
 using MBW.HassMQTT.CommonServices.Commands;
-using MBW.HassMQTT.CommonServices.MqttReconnect;
 using MBW.HassMQTT.Topics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -70,8 +69,7 @@ namespace MBW.BlueRiiot2MQTT
                     configuration.SendDiscoveryDocuments = blueRiiotConfig.EnableHASSDiscovery;
                 })
                 .Configure<CommonMqttConfiguration>(x => x.ClientId = "blueriiot2mqtt")
-                .Configure<CommonMqttConfiguration>(context.Configuration.GetSection("MQTT"))
-                .Configure<MqttReconnectionServiceConfig>(context.Configuration.GetSection("MQTT"));
+                .Configure<CommonMqttConfiguration>(context.Configuration.GetSection("MQTT"));
 
             // Commands
             services
