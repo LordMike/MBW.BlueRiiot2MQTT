@@ -22,36 +22,40 @@ jobs:
 
     - name: Build
       run: |
-        docker build -f ${DOCKER_DOCKERFILE}.amd64 -t ${DOCKER_TAG}:amd64-latest .
-        docker build -f ${DOCKER_DOCKERFILE}.armv7 -t ${DOCKER_TAG}:armv7-latest .
-        docker build -f ${DOCKER_DOCKERFILE}.aarch64 -t ${DOCKER_TAG}:aarch64-latest .
+        [ -f "${DOCKER_DOCKERFILE}.amd64" ] && docker build -f ${DOCKER_DOCKERFILE}.amd64 -t ${DOCKER_TAG}:amd64-latest .
+        [ -f "${DOCKER_DOCKERFILE}.armv7" ] && docker build -f ${DOCKER_DOCKERFILE}.armv7 -t ${DOCKER_TAG}:armv7-latest .
+        [ -f "${DOCKER_DOCKERFILE}.aarch64" ] && docker build -f ${DOCKER_DOCKERFILE}.aarch64 -t ${DOCKER_TAG}:aarch64-latest .
     
     - name: Push base images to docker hub
       run: |
         echo ${{ secrets.docker_token }} | docker login -u ${{ secrets.docker_username }} --password-stdin
-        docker tag ${DOCKER_TAG}:amd64-latest ${DOCKER_TAG}:amd64-$GIT_TAG
-        docker tag ${DOCKER_TAG}:armv7-latest ${DOCKER_TAG}:armv7-$GIT_TAG
-        docker tag ${DOCKER_TAG}:aarch64-latest ${DOCKER_TAG}:aarch64-$GIT_TAG
+        [ -f "${DOCKER_DOCKERFILE}.amd64" ] && docker tag ${DOCKER_TAG}:amd64-latest ${DOCKER_TAG}:amd64-$GIT_TAG
+        [ -f "${DOCKER_DOCKERFILE}.armv7" ] && docker tag ${DOCKER_TAG}:armv7-latest ${DOCKER_TAG}:armv7-$GIT_TAG
+        [ -f "${DOCKER_DOCKERFILE}.aarch64" ] && docker tag ${DOCKER_TAG}:aarch64-latest ${DOCKER_TAG}:aarch64-$GIT_TAG
         
-        docker push ${DOCKER_TAG}:amd64-latest
-        docker push ${DOCKER_TAG}:amd64-$GIT_TAG
-        docker push ${DOCKER_TAG}:armv7-latest
-        docker push ${DOCKER_TAG}:armv7-$GIT_TAG
-        docker push ${DOCKER_TAG}:aarch64-latest
-        docker push ${DOCKER_TAG}:aarch64-$GIT_TAG
+        [ -f "${DOCKER_DOCKERFILE}.amd64" ] && docker push ${DOCKER_TAG}:amd64-latest
+        [ -f "${DOCKER_DOCKERFILE}.amd64" ] && docker push ${DOCKER_TAG}:amd64-$GIT_TAG
+        [ -f "${DOCKER_DOCKERFILE}.armv7" ] && docker push ${DOCKER_TAG}:armv7-latest
+        [ -f "${DOCKER_DOCKERFILE}.armv7" ] && docker push ${DOCKER_TAG}:armv7-$GIT_TAG
+        [ -f "${DOCKER_DOCKERFILE}.aarch64" ] && docker push ${DOCKER_TAG}:aarch64-latest
+        [ -f "${DOCKER_DOCKERFILE}.aarch64" ] && docker push ${DOCKER_TAG}:aarch64-$GIT_TAG
       
     - name: Create manifest images + tag images
       run: |
         # Note: Manifests are created from tags from docker.io, so we must push first, then create manifest, then push again
-        docker manifest create ${DOCKER_TAG}:latest \
-          ${DOCKER_TAG}:amd64-latest \
-          ${DOCKER_TAG}:armv7-latest \
-          ${DOCKER_TAG}:aarch64-latest
-          
-        docker manifest create ${DOCKER_TAG}:$GIT_TAG \
-          ${DOCKER_TAG}:amd64-$GIT_TAG \
-          ${DOCKER_TAG}:armv7-$GIT_TAG \
-          ${DOCKER_TAG}:aarch64-$GIT_TAG
+        PARTS=''
+        [ -f "${DOCKER_DOCKERFILE}.amd64" ] && PARTS="$PARTS ${DOCKER_TAG}:amd64-latest"
+        [ -f "${DOCKER_DOCKERFILE}.armv7" ] && PARTS="$PARTS ${DOCKER_TAG}:armv7-latest"
+        [ -f "${DOCKER_DOCKERFILE}.aarch64" ] && PARTS="$PARTS ${DOCKER_TAG}:aarch64-latest"
+        
+        docker manifest create ${DOCKER_TAG}:latest $PARTS
+        
+        PARTS=''
+        [ -f "${DOCKER_DOCKERFILE}.amd64" ] && PARTS="$PARTS ${DOCKER_TAG}:amd64-$GIT_TAG"
+        [ -f "${DOCKER_DOCKERFILE}.armv7" ] && PARTS="$PARTS ${DOCKER_TAG}:armv7-$GIT_TAG"
+        [ -f "${DOCKER_DOCKERFILE}.aarch64" ] && PARTS="$PARTS ${DOCKER_TAG}:aarch64-$GIT_TAG"
+        
+        docker manifest create ${DOCKER_TAG}:$GIT_TAG $PARTS
         
         docker manifest push ${DOCKER_TAG}:latest
         docker manifest push ${DOCKER_TAG}:$GIT_TAG

@@ -24,7 +24,3 @@ jobs:
 
     - name: Test
       run: "[ -f .ci-skip-tests ] && echo 'Skipping tests' || dotnet test --no-build --verbosity normal"
-
-    - name: Pack
-      if: github.ref == 'refs/heads/master'
-      run: dotnet pack -c Debug -o Build

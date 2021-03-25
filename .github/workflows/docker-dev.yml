@@ -22,24 +22,26 @@ jobs:
 
     - name: Build
       run: |
-        [ -f ${DOCKER_DOCKERFILE}.amd64 ] && docker build -f ${DOCKER_DOCKERFILE}.amd64 -t ${DOCKER_TAG}:amd64-dev .
-        docker build -f ${DOCKER_DOCKERFILE}.armv7 -t ${DOCKER_TAG}:armv7-dev .
-        docker build -f ${DOCKER_DOCKERFILE}.aarch64 -t ${DOCKER_TAG}:aarch64-dev .
+        [ -f "${DOCKER_DOCKERFILE}.amd64" ] && docker build -f ${DOCKER_DOCKERFILE}.amd64 -t ${DOCKER_TAG}:amd64-dev .
+        [ -f "${DOCKER_DOCKERFILE}.armv7" ] && docker build -f ${DOCKER_DOCKERFILE}.armv7 -t ${DOCKER_TAG}:armv7-dev .
+        [ -f "${DOCKER_DOCKERFILE}.aarch64" ] && docker build -f ${DOCKER_DOCKERFILE}.aarch64 -t ${DOCKER_TAG}:aarch64-dev .
     
     - name: Push base images to docker hub
       run: |
         echo ${{ secrets.docker_token }} | docker login -u ${{ secrets.docker_username }} --password-stdin
         
-        docker push ${DOCKER_TAG}:amd64-dev
-        docker push ${DOCKER_TAG}:armv7-dev
-        docker push ${DOCKER_TAG}:aarch64-dev
+        [ -f "${DOCKER_DOCKERFILE}.amd64" ] && docker push ${DOCKER_TAG}:amd64-dev
+        [ -f "${DOCKER_DOCKERFILE}.armv7" ] && docker push ${DOCKER_TAG}:armv7-dev
+        [ -f "${DOCKER_DOCKERFILE}.aarch64" ] && docker push ${DOCKER_TAG}:aarch64-dev
       
     - name: Create manifest images + tag images
       run: |
         # Note: Manifests are created from tags from docker.io, so we must push first, then create manifest, then push again
-        docker manifest create ${DOCKER_TAG}:dev \
-          ${DOCKER_TAG}:amd64-dev \
-          ${DOCKER_TAG}:armv7-dev \
-          ${DOCKER_TAG}:aarch64-dev
+        PARTS=''
+        [ -f "${DOCKER_DOCKERFILE}.amd64" ] && PARTS="$PARTS ${DOCKER_TAG}:amd64-dev"
+        [ -f "${DOCKER_DOCKERFILE}.armv7" ] && PARTS="$PARTS ${DOCKER_TAG}:armv7-dev"
+        [ -f "${DOCKER_DOCKERFILE}.aarch64" ] && PARTS="$PARTS ${DOCKER_TAG}:aarch64-dev"
+        
+        docker manifest create ${DOCKER_TAG}:dev $PARTS
         
         docker manifest push ${DOCKER_TAG}:dev
