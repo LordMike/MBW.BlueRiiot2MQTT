@@ -2,7 +2,7 @@ name: Docker (dev) build and push
 
 on:
   push:
-    branches: master
+    branches: [ master ]
 
 jobs:
   build:
@@ -18,8 +18,8 @@ jobs:
     - uses: actions/checkout@v2
     
     - name: Dotenv Action
-      uses: falti/dotenv-action@v0.2.5
-
+      uses: xom9ikk/dotenv@v1.0.2
+  
     - name: Build
       run: |
         [ -f "${DOCKER_DOCKERFILE}.amd64" ] && docker build -f ${DOCKER_DOCKERFILE}.amd64 -t ${DOCKER_TAG}:amd64-dev .
@@ -28,7 +28,7 @@ jobs:
     
     - name: Push base images to docker hub
       run: |
-        echo ${{ secrets.docker_token }} | docker login -u ${{ secrets.docker_username }} --password-stdin
+        echo ${{ secrets.DOCKER_KEY }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
         
         [ -f "${DOCKER_DOCKERFILE}.amd64" ] && docker push ${DOCKER_TAG}:amd64-dev
         [ -f "${DOCKER_DOCKERFILE}.armv7" ] && docker push ${DOCKER_TAG}:armv7-dev
