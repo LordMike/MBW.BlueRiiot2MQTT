@@ -1,6 +1,5 @@
+.vs/
 bin/
 obj/
-build/
-.vs/
-
-appsettings.local.json
+*.user
+Build/
