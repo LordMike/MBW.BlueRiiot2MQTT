@@ -6,3 +6,7 @@ Build/
 # Files for local dev
 *.user
 *.local.json
+
+# Verify
+# https://github.com/VerifyTests/Verify#received-and-verified
+*.received.*
