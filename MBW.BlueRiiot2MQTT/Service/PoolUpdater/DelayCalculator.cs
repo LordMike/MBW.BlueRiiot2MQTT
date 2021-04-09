@@ -49,6 +49,8 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
                 // First runs are a special case
                 return TimeSpan.FromMilliseconds(1);
             }
+            
+            _logger.LogDebug("Timing calculation details: measurementInterval {measurementInterval}, lastAutoMeasurement: {lastAutoMeasurement}, anyDeviceAwake: {anyDeviceAwake}", _measurementInterval, _lastAutoMeasurement, _anyDeviceAwake);
 
             DateTime nextCheck;
             if (_measurementInterval.HasValue && _lastAutoMeasurement.HasValue && _anyDeviceAwake)
@@ -65,8 +67,10 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
             }
 
             // Add random jitter
-            nextCheck = nextCheck.AddSeconds(_random.Next(0, (int)_config.UpdateIntervalJitter.TotalSeconds));
-            TimeSpan delay = nextCheck - DateTime.UtcNow;
+            int jitterSeconds = _random.Next(0, (int)_config.UpdateIntervalJitter.TotalSeconds);
+            TimeSpan delay = nextCheck.AddSeconds(jitterSeconds) - DateTime.UtcNow;
+
+            _logger.LogDebug("Calculated next check at {Check} (in {Delay}), adding {Jitter}", nextCheck, delay, jitterSeconds);
 
             // We must wait at least minimumInterval between each run, to avoid error-induced loops
             if (delay <= _minimumInterval)
@@ -76,9 +80,10 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
                 _minimumIntervalUsedCounter++;
 
                 // No-updates back off should be minimumInterval * updates^2
-                // 3 updates = 00:01 * 3^2 = 00:09
-                // 8 updates = 00:01 * 8^2 = 01:04
+                // 3  updates = 00:01 * 3^2  = 00:09
+                // 8  updates = 00:01 * 8^2  = 01:04
                 // .. up to a max interval
+                // 30 updates = 00:01 * 30^2 = 15:00
 
                 // Note: We ensure our math is always stable
                 int cappedCounter = Math.Clamp(_minimumIntervalUsedCounter, 1, 30);
