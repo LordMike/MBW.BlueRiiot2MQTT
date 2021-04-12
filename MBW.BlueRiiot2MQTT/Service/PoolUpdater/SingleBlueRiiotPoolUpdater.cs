@@ -183,9 +183,12 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
 
                 measurements.Add(blueMeasurement);
 
-                // Track the last measurement time in order to calculate the next.
+                // Track the last measurement time in order to calculate the next expected measurement.
+                // For now, this includes Gateway & sigfox measurements, as these are automated.
                 // Manual bluetooth measurements do not affect the interval
-                lastAutomaticMeasurement = ComparisonHelper.GetMax(lastAutomaticMeasurement, blueDevice.BlueDevice.LastMeasureMessageSigfox).GetValueOrDefault();
+                lastAutomaticMeasurement = ComparisonHelper.GetMax(lastAutomaticMeasurement, 
+                    blueDevice.BlueDevice.LastMeasureMessageSigfox, 
+                    blueDevice.BlueDevice.LastMeasureMessageGateway).GetValueOrDefault();
 
                 lastMeasurement = ComparisonHelper.GetMax(lastMeasurement,
                     blueDevice.BlueDevice.LastMeasureMessage,
