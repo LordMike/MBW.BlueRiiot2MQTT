@@ -21,7 +21,7 @@ jobs:
       uses: xom9ikk/dotenv@v1.0.2
 
     - name: Test
-      run: "[ -f .ci-skip-tests ] && echo 'Skipping tests' || dotnet test --configuration Release
+      run: "[ -f .ci-skip-tests ] && echo 'Skipping tests' || dotnet test --configuration Release"
   
     - name: Build
       run: |
