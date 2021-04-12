@@ -8,7 +8,7 @@ namespace MBW.BlueRiiot2MQTT.Helpers
         {
             T? latest = null;
 
-            foreach (var value in values)
+            foreach (T? value in values)
             {
                 if (!value.HasValue)
                     continue;
@@ -24,20 +24,20 @@ namespace MBW.BlueRiiot2MQTT.Helpers
 
         public static T? GetMin<T>(params T?[] values) where T : struct, IComparable<T>
         {
-            T? latest = null;
+            T? earliest = null;
 
-            foreach (var value in values)
+            foreach (T? value in values)
             {
                 if (!value.HasValue)
                     continue;
 
-                if (latest.HasValue && latest.Value.CompareTo(value.Value) > 0)
+                if (earliest.HasValue && earliest.Value.CompareTo(value.Value) < 0)
                     continue;
 
-                latest = value;
+                earliest = value;
             }
 
-            return latest;
+            return earliest;
         }
     }
 }
