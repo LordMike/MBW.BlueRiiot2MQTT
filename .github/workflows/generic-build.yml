@@ -23,4 +23,4 @@ jobs:
       run: dotnet build --configuration Release --no-restore
 
     - name: Test
-      run: "[ -f .ci-skip-tests ] && echo 'Skipping tests' || dotnet test --no-build --verbosity normal"
+      run: "[ -f .ci-skip-tests ] && echo 'Skipping tests' || dotnet test --no-build --configuration Release --verbosity normal"
