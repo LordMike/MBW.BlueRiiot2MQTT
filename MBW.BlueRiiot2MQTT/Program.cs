@@ -7,6 +7,7 @@ using MBW.BlueRiiot2MQTT.Features;
 using MBW.BlueRiiot2MQTT.Helpers;
 using MBW.BlueRiiot2MQTT.Service;
 using MBW.BlueRiiot2MQTT.Service.PoolUpdater;
+using MBW.Client.BlueRiiotApi.Builder;
 using MBW.HassMQTT;
 using MBW.HassMQTT.CommonServices;
 using MBW.HassMQTT.CommonServices.Commands;
@@ -109,7 +110,11 @@ namespace MBW.BlueRiiot2MQTT
 
                     builder
                         .UseUsernamePassword(config.Username, config.Password)
-                        .UseHttpClientFactory(httpFactory, "blueriiot");
+                        .UseHttpClientFactory(httpFactory, "blueriiot", settings =>
+                        {
+                            if (config.ServerUrl != null)
+                                settings.ServerUri = config.ServerUrl;
+                        });
                 });
 
             services

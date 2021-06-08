@@ -21,5 +21,7 @@ namespace MBW.BlueRiiot2MQTT.Configuration
         public string Language { get; set; }
 
         public bool ReportUnchangedValues { get; set; } = false;
+
+        public Uri ServerUrl { get; set; }
     }
 }
