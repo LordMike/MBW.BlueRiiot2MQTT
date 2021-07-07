@@ -18,6 +18,8 @@ namespace MBW.BlueRiiot2MQTT.Configuration
 
         public TimeSpan MaxBackoffInterval { get; set; } = TimeSpan.FromHours(3);
 
+        public bool EnableSchedule { get; set; } = true;
+
         public string Language { get; set; }
 
         public bool ReportUnchangedValues { get; set; } = false;

@@ -92,6 +92,7 @@ For all available tags, see [Docker Hub](https://hub.docker.com/repository/docke
 | BlueRiiot__UpdateIntervalJitter | | 00:02:00 | Update interval jitter, when BR reports reading interval, default: `2 minutes` |
 | BlueRiiot__UpdateIntervalWhenAllDevicesAsleep | | | When all blue devices are asleep, use this interval, default: `BlueRiiot__UpdateInterval` |
 | BlueRiiot__MaxBackoffInterval | | 03:00:00 | When the Blue device is not reporting data as it should, BlueRiiot2MQTT will backoff up to this value. Default: `3 hours` |
+| BlueRiiot__EnableSchedule | | `true` | Enable scheduling, if disabled, B2M will only update on demand. Default: `true` |
 | BlueRiiot__Language | | `en` | Language for the API. Used for messages from BlueRiiot |
 | BlueRiiot__ReportUnchangedValues | | `false` | Send unchanged values |
 | Proxy__Uri | | | Set this to pass BlueRiiot API calls through an HTTP proxy |

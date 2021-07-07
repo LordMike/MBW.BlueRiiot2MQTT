@@ -97,11 +97,22 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
                     operationalSensor.SetAttribute("last_bad_status", e.Message);
                 }
 
-                // Calculate time to next update
-                TimeSpan runDelay = _delayCalculator.CalculateNextRun(DateTime.UtcNow);
-                DateTime runNext = DateTime.UtcNow + runDelay;
+                TimeSpan? runDelay;
+                if (_config.EnableSchedule)
+                {
+                    // Calculate time to next update
+                    runDelay = _delayCalculator.CalculateNextRun(DateTime.UtcNow);
+                    DateTime runNext = DateTime.UtcNow + runDelay.Value;
 
-                operationalSensor.SetAttribute("next_run", runNext);
+                    operationalSensor.SetAttribute("next_run", runNext);
+                }
+                else
+                {
+                    // We will forever wait for manual sync
+                    runDelay = null;
+                    
+                    operationalSensor.SetAttribute("next_run", "manual");
+                }
 
                 try
                 {
@@ -118,9 +129,12 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
 
                 // Wait on the force sync reset event, for the specified time.
                 // If either the reset event or the time runs out, we do an update
-                using (CancellationTokenSource cts = new CancellationTokenSource(runDelay))
+                using (CancellationTokenSource cts = new CancellationTokenSource())
                 using (CancellationTokenSource linkedToken = CancellationTokenSource.CreateLinkedTokenSource(cts.Token, _stoppingToken.Token))
                 {
+                    if (runDelay.HasValue)
+                        cts.CancelAfter(runDelay.Value);
+
                     try
                     {
                         await _forceSyncResetEvent.WaitAsync(linkedToken.Token);
@@ -186,8 +200,8 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
                 // Track the last measurement time in order to calculate the next expected measurement.
                 // For now, this includes Gateway & sigfox measurements, as these are automated.
                 // Manual bluetooth measurements do not affect the interval
-                lastAutomaticMeasurement = ComparisonHelper.GetMax(lastAutomaticMeasurement, 
-                    blueDevice.BlueDevice.LastMeasureMessageSigfox, 
+                lastAutomaticMeasurement = ComparisonHelper.GetMax(lastAutomaticMeasurement,
+                    blueDevice.BlueDevice.LastMeasureMessageSigfox,
                     blueDevice.BlueDevice.LastMeasureMessageGateway).GetValueOrDefault();
 
                 lastMeasurement = ComparisonHelper.GetMax(lastMeasurement,
