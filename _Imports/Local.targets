@@ -1,0 +1,24 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- Package -->
+  <PropertyGroup>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/LordMike/MBW.BlueRiiot2MQTT</PackageProjectUrl>
+    <PackageTags>home-assistant blueriiot</PackageTags>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <RepositoryUrl>https://github.com/LordMike/MBW.BlueRiiot2MQTT.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations" Version="2020.1.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Override Minver config -->
+  <PropertyGroup>
+    <MinVerTagPrefix></MinVerTagPrefix>
+  </PropertyGroup>
+    
+</Project>
