@@ -33,12 +33,12 @@ namespace MBW.BlueRiiot2MQTT.Commands
             return new[] { "commands", "pool", null, "set_pump_schedule" };
         }
 
-        public async Task Handle(string[] topicLevels, MqttApplicationMessage message, CancellationToken token = new CancellationToken())
+        public Task Handle(string[] topicLevels, MqttApplicationMessage message, CancellationToken token = new CancellationToken())
         {
             // Setting pump schedules seems to brick accounts, so it is disabled for now.
             _logger.LogWarning("Setting pump schedules is disabled, see: https://github.com/LordMike/MBW.BlueRiiot2MQTT/issues/47");
 
-            return;
+            return Task.CompletedTask;
 
             //string poolId = topicLevels[2];
             //string newScheduleString = message.ConvertPayloadToString();
