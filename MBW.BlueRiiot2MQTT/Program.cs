@@ -48,6 +48,9 @@ namespace MBW.BlueRiiot2MQTT
                         Log.Logger.Information("Loading extra config file at {path}", extraConfigFile);
                         builder.AddJsonFile(extraConfigFile, true);
                     }
+
+                    // Add Docker Secrets
+                    builder.AddKeyPerFile("/run/secrets", true);
                 })
                 .ConfigureLogging((context, builder) =>
                 {
