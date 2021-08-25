@@ -29,7 +29,7 @@ namespace MBW.BlueRiiot2MQTT.Service
         private readonly HassMqttManager _hassMqttManager;
         private readonly SingleBlueRiiotPoolUpdaterFactory _updaterFactory;
         private readonly BlueRiiotConfiguration _config;
-        private readonly ConcurrentDictionary<string, List<IBackgroundUpdater>> _updaters = new(StringComparer.Ordinal);
+        private readonly ConcurrentDictionary<string, List<IBackgroundUpdater>> _updaters = new ConcurrentDictionary<string, List<IBackgroundUpdater>>(StringComparer.Ordinal);
 
         public const string OkMessage = "ok";
         public const string ProblemMessage = "problem";
