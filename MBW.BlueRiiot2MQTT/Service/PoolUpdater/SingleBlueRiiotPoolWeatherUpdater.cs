@@ -194,7 +194,18 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
             SwimmingPoolWeatherGetResponse weather = await _blueClient.GetSwimmingPoolWeather(_pool.SwimmingPoolId, _config.Language, stoppingToken);
             _updateManager.Process(_pool, weather.Data);
 
+            _logger.LogDebug("Fetching blue devices for {Id} ({Name})", _pool.SwimmingPoolId, _pool.Name);
+            SwimmingPoolBlueDevicesGetResponse blueDevices = await _blueClient.GetSwimmingPoolBlueDevices(_pool.SwimmingPoolId, stoppingToken);
+
+            bool anyBlueDeviceIsAwake = false;
+            foreach (SwimmingPoolDevice blueDevice in blueDevices.Data)
+            {
+                // Track sleep states
+                anyBlueDeviceIsAwake |= blueDevice.BlueDevice.SleepState == "awake";
+            }
+
             _delayCalculator.TrackLastAutoMeasurement(DateTime.UtcNow);
+            _delayCalculator.TrackSleepState(anyBlueDeviceIsAwake);
 
             if (lastMeasurement > _lastMeasurement)
             {
