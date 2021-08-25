@@ -25,12 +25,18 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
             _config = config.Value;
         }
 
-        public SingleBlueRiiotPoolUpdater Create(SwimmingPool pool)
+        public SingleBlueRiiotPoolUpdater CreateUpdater(SwimmingPool pool)
         {
-            // TODO: Add structured logging property to indicate pool
             ILogger<SingleBlueRiiotPoolUpdater> logger = _loggerFactory.CreateLogger<SingleBlueRiiotPoolUpdater>();
 
             return new SingleBlueRiiotPoolUpdater(logger, _hassMqttManager, _updateManager, _blueClient, _config, pool);
+        }
+
+        public SingleBlueRiiotPoolWeatherUpdater CreateWeatherUpdater(SwimmingPool pool)
+        {
+            ILogger<SingleBlueRiiotPoolWeatherUpdater> logger = _loggerFactory.CreateLogger<SingleBlueRiiotPoolWeatherUpdater>();
+
+            return new SingleBlueRiiotPoolWeatherUpdater(logger, _hassMqttManager, _updateManager, _blueClient, _config, pool);
         }
     }
 }

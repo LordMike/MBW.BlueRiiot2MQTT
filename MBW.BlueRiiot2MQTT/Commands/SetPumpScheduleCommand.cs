@@ -1,15 +1,11 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using MBW.BlueRiiot2MQTT.Features;
 using MBW.Client.BlueRiiotApi;
-using MBW.Client.BlueRiiotApi.Objects;
 using MBW.HassMQTT;
 using MBW.HassMQTT.CommonServices.Commands;
 using Microsoft.Extensions.Logging;
 using MQTTnet;
-using Newtonsoft.Json;
 
 namespace MBW.BlueRiiot2MQTT.Commands
 {

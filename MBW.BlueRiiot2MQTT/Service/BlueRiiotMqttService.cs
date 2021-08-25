@@ -29,7 +29,7 @@ namespace MBW.BlueRiiot2MQTT.Service
         private readonly HassMqttManager _hassMqttManager;
         private readonly SingleBlueRiiotPoolUpdaterFactory _updaterFactory;
         private readonly BlueRiiotConfiguration _config;
-        private readonly ConcurrentDictionary<string, SingleBlueRiiotPoolUpdater> _updaters = new ConcurrentDictionary<string, SingleBlueRiiotPoolUpdater>(StringComparer.Ordinal);
+        private readonly ConcurrentDictionary<string, List<IBackgroundUpdater>> _updaters = new(StringComparer.Ordinal);
 
         public const string OkMessage = "ok";
         public const string ProblemMessage = "problem";
@@ -52,7 +52,7 @@ namespace MBW.BlueRiiot2MQTT.Service
         {
             _logger.LogInformation("Forcing a sync for all known pools");
 
-            foreach (SingleBlueRiiotPoolUpdater updater in _updaters.Values)
+            foreach (IBackgroundUpdater updater in _updaters.Values.SelectMany(s => s))
                 updater.ForceSync();
         }
 
@@ -97,7 +97,7 @@ namespace MBW.BlueRiiot2MQTT.Service
                 // Stop all updaters
                 _logger.LogInformation("Stopping all pool updaters");
 
-                foreach (SingleBlueRiiotPoolUpdater updater in _updaters.Values)
+                foreach (IBackgroundUpdater updater in _updaters.Values.SelectMany(s => s))
                     updater.Stop();
             }
         }
@@ -151,12 +151,17 @@ namespace MBW.BlueRiiot2MQTT.Service
                 // New pool!
                 _logger.LogInformation("Discovered new pool, '{Name}' ({Pool})", pool.Name, pool.SwimmingPoolId);
 
-                _updaters.GetOrAdd(pool.SwimmingPoolId, _ =>
+                SingleBlueRiiotPoolUpdater newUpdater = _updaterFactory.CreateUpdater(pool.SwimmingPool);
+                newUpdater.Start();
+
+                SingleBlueRiiotPoolWeatherUpdater weatherUpdater = _updaterFactory.CreateWeatherUpdater(pool.SwimmingPool);
+                weatherUpdater.Start();
+
+                _updaters[pool.SwimmingPoolId] = new List<IBackgroundUpdater>
                 {
-                    SingleBlueRiiotPoolUpdater updater = _updaterFactory.Create(pool.SwimmingPool);
-                    updater.Start();
-                    return updater;
-                });
+                    newUpdater,
+                    weatherUpdater
+                };
             }
 
             // Remove any leftovers
@@ -164,8 +169,11 @@ namespace MBW.BlueRiiot2MQTT.Service
             {
                 _logger.LogWarning("Removing pool that no longer exists, {Pool}", poolId);
 
-                if (_updaters.Remove(poolId, out var pool))
-                    pool.Stop();
+                if (_updaters.Remove(poolId, out List<IBackgroundUpdater> updaters))
+                {
+                    foreach (IBackgroundUpdater updater in updaters)
+                        updater.Stop();
+                }
             }
         }
     }

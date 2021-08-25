@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading.Tasks;
 using MBW.BlueRiiot2MQTT.Commands;
 using MBW.BlueRiiot2MQTT.Configuration;
@@ -86,6 +89,24 @@ namespace MBW.BlueRiiot2MQTT
                 .Configure<BlueRiiotHassConfiguration>(context.Configuration.GetSection("HASS"))
                 .Configure<HassConfiguration>(context.Configuration.GetSection("HASS"))
                 .Configure<BlueRiiotConfiguration>(context.Configuration.GetSection("BlueRiiot"))
+                .PostConfigure<BlueRiiotConfiguration>(x =>
+                {
+                    void Set<T>(Expression<Func<BlueRiiotConfiguration, T>> prop, T otherValue)
+                    {
+                        PropertyInfo myProp = prop.GetPropertyInfo();
+                        T currentVal = (T)myProp.GetValue(x);
+
+                        if (EqualityComparer<T>.Default.Equals(currentVal, default))
+                            myProp.SetValue(x, otherValue);
+                    }
+
+                    // Copy over defaults
+                    Set(n => n.UpdateIntervalWhenAllDevicesAsleep, x.UpdateInterval);
+
+                    // Weather intervals use default intervals if not set
+                    Set(n => n.WeatherUpdateInterval, x.UpdateInterval);
+                    Set(n => n.WeatherUpdateIntervalWhenAllDevicesAsleep, x.UpdateIntervalWhenAllDevicesAsleep);
+                })
                 .Configure<ProxyConfiguration>(context.Configuration.GetSection("Proxy"))
                 .AddSingleton(x => new HassMqttTopicBuilder(x.GetOptions<HassConfiguration>()))
                 .AddHttpClient("blueriiot")

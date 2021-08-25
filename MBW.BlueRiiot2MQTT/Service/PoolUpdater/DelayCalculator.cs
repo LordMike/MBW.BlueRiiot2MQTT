@@ -1,5 +1,4 @@
 using System;
-using MBW.BlueRiiot2MQTT.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
@@ -9,7 +8,7 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
         private readonly TimeSpan _minimumInterval = TimeSpan.FromMinutes(1);
         private readonly Random _random = new Random();
         private readonly ILogger _logger;
-        private readonly BlueRiiotConfiguration _config;
+        private readonly DelayCalculatorConfig _config;
         private readonly string _poolName;
 
         private TimeSpan? _measurementInterval;
@@ -17,7 +16,7 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
         private int _minimumIntervalUsedCounter;
         private bool _anyDeviceAwake;
 
-        public DelayCalculator(ILogger logger, BlueRiiotConfiguration config, string poolName)
+        public DelayCalculator(ILogger logger, DelayCalculatorConfig config, string poolName)
         {
             _logger = logger;
             _config = config;
@@ -49,7 +48,7 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
                 // First runs are a special case
                 return TimeSpan.FromMilliseconds(1);
             }
-            
+
             _logger.LogDebug("Timing calculation details: measurementInterval {measurementInterval}, lastAutoMeasurement: {lastAutoMeasurement}, anyDeviceAwake: {anyDeviceAwake}", _measurementInterval, _lastAutoMeasurement, _anyDeviceAwake);
 
             DateTime nextCheck;

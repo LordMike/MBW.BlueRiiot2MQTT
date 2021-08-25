@@ -21,9 +21,11 @@ using Nito.AsyncEx;
 namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
 {
     /// <summary>
-    /// Keeps track of a single BlueRiiot pool
+    /// This updates Weather stuff only
+    /// The weather API has been dodgy in the past
+    /// https://github.com/LordMike/MBW.BlueRiiot2MQTT/issues/48
     /// </summary>
-    internal class SingleBlueRiiotPoolUpdater : IBackgroundUpdater
+    internal class SingleBlueRiiotPoolWeatherUpdater : IBackgroundUpdater
     {
         private readonly ILogger _logger;
         private readonly HassMqttManager _hassMqttManager;
@@ -38,7 +40,7 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
 
         private DateTime _lastMeasurement = DateTime.MinValue;
 
-        public SingleBlueRiiotPoolUpdater(ILogger logger, HassMqttManager hassMqttManager, FeatureUpdateManager updateManager, BlueClient blueClient, BlueRiiotConfiguration config, SwimmingPool pool)
+        public SingleBlueRiiotPoolWeatherUpdater(ILogger logger, HassMqttManager hassMqttManager, FeatureUpdateManager updateManager, BlueClient blueClient, BlueRiiotConfiguration config, SwimmingPool pool)
         {
             _logger = logger;
             _hassMqttManager = hassMqttManager;
@@ -49,8 +51,8 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
 
             DelayCalculatorConfig delayCalcConfig = new DelayCalculatorConfig
             {
-                UpdateInterval = config.UpdateInterval,
-                UpdateIntervalWhenAllDevicesAsleep = config.UpdateIntervalWhenAllDevicesAsleep,
+                UpdateInterval = config.WeatherUpdateInterval,
+                UpdateIntervalWhenAllDevicesAsleep = config.WeatherUpdateIntervalWhenAllDevicesAsleep,
                 UpdateIntervalJitter = config.UpdateIntervalJitter,
                 MaxBackoffInterval = config.MaxBackoffInterval
             };
@@ -123,7 +125,7 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
                 {
                     // We will forever wait for manual sync
                     runDelay = null;
-                    
+
                     operationalSensor.SetAttribute("next_run", "manual");
                 }
 
@@ -165,85 +167,34 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
         private ISensorContainer CreateSystemEntities()
         {
             string deviceId = HassUniqueIdBuilder.GetPoolDeviceId(_pool);
-            const string entityId = "update_status";
+            const string entityId = "weather_update_status";
 
             _hassMqttManager.ConfigureSensor<MqttBinarySensor>(deviceId, entityId)
-                   .ConfigureTopics(HassTopicKind.State, HassTopicKind.JsonAttributes)
-                   .SetHassPoolProperties(_pool)
-                   .ConfigureDiscovery(discovery =>
-                   {
-                       discovery.Name = "Pool update status";
-                       discovery.DeviceClass = HassDeviceClass.Problem;
+                .ConfigureTopics(HassTopicKind.State, HassTopicKind.JsonAttributes)
+                .SetHassPoolProperties(_pool)
+                .ConfigureDiscovery(discovery =>
+                {
+                    discovery.Name = "Pool weather update status";
+                    discovery.DeviceClass = HassDeviceClass.Problem;
 
-                       discovery.PayloadOn = BlueRiiotMqttService.ProblemMessage;
-                       discovery.PayloadOff = BlueRiiotMqttService.OkMessage;
-                   })
-                   .ConfigureAliveService();
+                    discovery.PayloadOn = BlueRiiotMqttService.ProblemMessage;
+                    discovery.PayloadOff = BlueRiiotMqttService.OkMessage;
+                })
+                .ConfigureAliveService();
 
             return _hassMqttManager.GetSensor(deviceId, entityId);
         }
 
         private async Task PerformUpdate(CancellationToken stoppingToken)
         {
-            DateTime lastAutomaticMeasurement = DateTime.MinValue;
             DateTime lastMeasurement = DateTime.MinValue;
-            TimeSpan? measureInterval = null;
 
-            List<SwimmingPoolLastMeasurementsGetResponse> measurements = new List<SwimmingPoolLastMeasurementsGetResponse>();
+            _logger.LogDebug("Fetching weather for {Id} ({Name})", _pool.SwimmingPoolId, _pool.Name);
 
-            _updateManager.Process(_pool, _pool);
+            SwimmingPoolWeatherGetResponse weather = await _blueClient.GetSwimmingPoolWeather(_pool.SwimmingPoolId, _config.Language, stoppingToken);
+            _updateManager.Process(_pool, weather.Data);
 
-            _logger.LogDebug("Fetching blue devices for {Id} ({Name})", _pool.SwimmingPoolId, _pool.Name);
-            SwimmingPoolBlueDevicesGetResponse blueDevices = await _blueClient.GetSwimmingPoolBlueDevices(_pool.SwimmingPoolId, stoppingToken);
-
-            bool anyBlueDeviceIsAwake = false;
-            foreach (SwimmingPoolDevice blueDevice in blueDevices.Data)
-            {
-                _logger.LogDebug("Fetching measurements for {Id}, blue {Serial} ({Name})", _pool.SwimmingPoolId, blueDevice.BlueDeviceSerial, _pool.Name);
-                _updateManager.Process(_pool, blueDevice);
-
-                SwimmingPoolLastMeasurementsGetResponse blueMeasurement = await _blueClient.GetBlueLastMeasurements(_pool.SwimmingPoolId, blueDevice.BlueDeviceSerial, token: stoppingToken);
-
-                if (blueDevice.BlueDevice.WakePeriod > 0)
-                    measureInterval = ComparisonHelper.GetMin(measureInterval, TimeSpan.FromSeconds(blueDevice.BlueDevice.WakePeriod));
-
-                measurements.Add(blueMeasurement);
-
-                // Track the last measurement time in order to calculate the next expected measurement.
-                // For now, this includes Gateway & sigfox measurements, as these are automated.
-                // Manual bluetooth measurements do not affect the interval
-                lastAutomaticMeasurement = ComparisonHelper.GetMax(lastAutomaticMeasurement,
-                    blueDevice.BlueDevice.LastMeasureMessageSigfox,
-                    blueDevice.BlueDevice.LastMeasureMessageGateway).GetValueOrDefault();
-
-                lastMeasurement = ComparisonHelper.GetMax(lastMeasurement,
-                    blueDevice.BlueDevice.LastMeasureMessage,
-                    blueDevice.BlueDevice.LastMeasureMessageBle,
-                    blueDevice.BlueDevice.LastMeasureMessageSigfox).GetValueOrDefault();
-
-                // Track sleep states
-                anyBlueDeviceIsAwake |= blueDevice.BlueDevice.SleepState == "awake";
-            }
-
-            _logger.LogDebug("Fetching guidance for {Id} ({Name})", _pool.SwimmingPoolId, _pool.Name);
-
-            SwimmingPoolGuidanceGetResponse guidance = await _blueClient.GetSwimmingPoolGuidance(_pool.SwimmingPoolId, _config.Language, token: stoppingToken);
-            _updateManager.Process(_pool, guidance);
-
-            _logger.LogDebug("Fetching measurements for {Id} ({Name})", _pool.SwimmingPoolId, _pool.Name);
-
-            SwimmingPoolLastMeasurementsGetResponse measurement = await _blueClient.GetSwimmingPoolLastMeasurements(_pool.SwimmingPoolId, stoppingToken);
-            measurements.Add(measurement);
-
-            lastMeasurement = ComparisonHelper.GetMax(lastMeasurement,
-                measurement.LastStripTimestamp,
-                measurement.LastBlueMeasureTimestamp).GetValueOrDefault();
-
-            _updateManager.Process(_pool, measurements);
-            
-            _delayCalculator.TrackMeasureInterval(measureInterval);
-            _delayCalculator.TrackLastAutoMeasurement(lastAutomaticMeasurement);
-            _delayCalculator.TrackSleepState(anyBlueDeviceIsAwake);
+            _delayCalculator.TrackLastAutoMeasurement(DateTime.UtcNow);
 
             if (lastMeasurement > _lastMeasurement)
             {
