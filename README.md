@@ -97,6 +97,27 @@ For all available tags, see [Docker Hub](https://hub.docker.com/repository/docke
 | BlueRiiot__ReportUnchangedValues | | `false` | Send unchanged values |
 | Proxy__Uri | | | Set this to pass BlueRiiot API calls through an HTTP proxy |
 
+## Docker secrets
+It is possible to use [Docker Secrets](https://docs.docker.com/engine/swarm/secrets/) to protect sensitive values like passwords. All values above can be set using secrets like the following docker compose file:
+
+```yaml
+version: "3.7"
+
+services:
+   blueriiot:
+     image: lordmike/blueriiot2mqtt:latest
+     environment:
+       BlueRiiot__Username: MyUser
+     secrets:
+       - Blueriiot__Password
+
+secrets:
+   Blueriiot__Password:
+     file: my_br_password.txt
+```
+
+Notice that the secrets name is exactly the same as the environment variable name.
+
 # MQTT Commands
 
 It is possible to send certain commands to the BlueRiiot2MQTT application, using MQTT topics. The following commands can be sent.
