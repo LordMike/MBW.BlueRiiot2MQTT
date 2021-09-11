@@ -175,7 +175,7 @@ namespace MBW.BlueRiiot2MQTT.Service.PoolUpdater
                 .ConfigureDiscovery(discovery =>
                 {
                     discovery.Name = "Pool weather update status";
-                    discovery.DeviceClass = HassDeviceClass.Problem;
+                    discovery.DeviceClass = HassBinarySensorDeviceClass.Problem;
 
                     discovery.PayloadOn = BlueRiiotMqttService.ProblemMessage;
                     discovery.PayloadOff = BlueRiiotMqttService.OkMessage;

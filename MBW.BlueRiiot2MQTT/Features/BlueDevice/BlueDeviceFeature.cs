@@ -34,7 +34,7 @@ namespace MBW.BlueRiiot2MQTT.Features.BlueDevice
 
             SensorExtensions.DeviceConfigure deviceConfigure = device =>
             {
-                device.Identifiers = new[] { deviceId };
+                device.Identifiers.Add(deviceId);
                 device.Name = deviceName;
                 device.SwVersion = data.BlueDevice.FwVersionPsoc;
                 device.Manufacturer = "Blue Riiot";
@@ -46,7 +46,7 @@ namespace MBW.BlueRiiot2MQTT.Features.BlueDevice
                 .ConfigureDevice(deviceConfigure)
                 .ConfigureDiscovery(discovery =>
                 {
-                    discovery.DeviceClass = HassDeviceClass.Timestamp;
+                    discovery.DeviceClass = HassSensorDeviceClass.Timestamp;
                     discovery.Name = $"{namePrefix} Last Contact";
                 })
                 .ConfigureAliveService();
@@ -56,7 +56,7 @@ namespace MBW.BlueRiiot2MQTT.Features.BlueDevice
                 .ConfigureDevice(deviceConfigure)
                 .ConfigureDiscovery(discovery =>
                 {
-                    discovery.DeviceClass = HassDeviceClass.Battery;
+                    discovery.DeviceClass = HassSensorDeviceClass.Battery;
                     discovery.Name = $"{namePrefix} Battery";
                     discovery.UnitOfMeasurement = "%";
                 })

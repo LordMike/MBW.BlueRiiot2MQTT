@@ -109,13 +109,13 @@ namespace MBW.BlueRiiot2MQTT.Service
                 .ConfigureDevice(device =>
                 {
                     device.Name = "BlueRiiot2MQTT";
-                    device.Identifiers = new[] { HassUniqueIdBuilder.GetSystemDeviceId() };
+                    device.Identifiers.Add(HassUniqueIdBuilder.GetSystemDeviceId());
                     device.SwVersion = typeof(Program).Assembly.GetName().Version.ToString(3);
                 })
                 .ConfigureDiscovery(discovery =>
                 {
                     discovery.Name = "BlueRiiot2MQTT API Operational";
-                    discovery.DeviceClass = HassDeviceClass.Problem;
+                    discovery.DeviceClass = HassBinarySensorDeviceClass.Problem;
 
                     discovery.PayloadOn = ProblemMessage;
                     discovery.PayloadOff = OkMessage;

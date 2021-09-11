@@ -32,7 +32,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
                 .ConfigureDiscovery(discovery =>
                 {
                     discovery.Name = $"{pool.Name} Last Measurement";
-                    discovery.DeviceClass = HassDeviceClass.Timestamp;
+                    discovery.DeviceClass = HassSensorDeviceClass.Timestamp;
                 })
                 .ConfigureAliveService();
         }

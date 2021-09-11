@@ -16,9 +16,9 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool.Bases
         private readonly string _displayName;
         private readonly string _measurement;
         private readonly string _unit;
-        private readonly HassDeviceClass _deviceClass;
+        private readonly HassSensorDeviceClass? _deviceClass;
 
-        public PoolWeatherFeatureBase(HassMqttManager hassMqttManager, string displayName, string measurement, string unit, HassDeviceClass deviceClass = HassDeviceClass.None) : base(hassMqttManager)
+        public PoolWeatherFeatureBase(HassMqttManager hassMqttManager, string displayName, string measurement, string unit, HassSensorDeviceClass? deviceClass = null) : base(hassMqttManager)
         {
             _displayName = displayName;
             _measurement = measurement;
@@ -56,7 +56,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool.Bases
         [UsedImplicitly]
         internal class PoolWeatherTempFeature : PoolWeatherFeatureBase
         {
-            public PoolWeatherTempFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Weather forecast Temperature", "weather_temp", "°C", HassDeviceClass.Temperature)
+            public PoolWeatherTempFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Weather forecast Temperature", "weather_temp", "°C", HassSensorDeviceClass.Temperature)
             {
             }
 

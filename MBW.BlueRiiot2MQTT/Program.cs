@@ -74,6 +74,7 @@ namespace MBW.BlueRiiot2MQTT
                 {
                     BlueRiiotHassConfiguration blueRiiotConfig = context.Configuration.GetSection("HASS").Get<BlueRiiotHassConfiguration>();
                     configuration.SendDiscoveryDocuments = blueRiiotConfig.EnableHASSDiscovery;
+                    configuration.ValidateDiscoveryDocuments = true;
                 })
                 .Configure<CommonMqttConfiguration>(x => x.ClientId = "blueriiot2mqtt")
                 .Configure<CommonMqttConfiguration>(context.Configuration.GetSection("MQTT"));

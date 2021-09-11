@@ -1,5 +1,5 @@
 ﻿using MBW.Client.BlueRiiotApi.Objects;
-using MBW.HassMQTT.DiscoveryModels;
+using MBW.HassMQTT.DiscoveryModels.Interfaces;
 using MBW.HassMQTT.Extensions;
 using MBW.HassMQTT.Interfaces;
 
@@ -7,12 +7,12 @@ namespace MBW.BlueRiiot2MQTT.Helpers
 {
     internal static class HassUtilities
     {
-        public static IDiscoveryDocumentBuilder<TEntity> SetHassPoolProperties<TEntity>(this IDiscoveryDocumentBuilder<TEntity> sensor, SwimmingPool pool) where TEntity : MqttSensorDiscoveryBase
+        public static IDiscoveryDocumentBuilder<TEntity> SetHassPoolProperties<TEntity>(this IDiscoveryDocumentBuilder<TEntity> sensor, SwimmingPool pool) where TEntity : IHassDiscoveryDocument
         {
             return sensor.ConfigureDevice(device =>
             {
                 device.Name = pool.Name;
-                device.Identifiers = new[] {pool.SwimmingPoolId};
+                device.Identifiers.Add(pool.SwimmingPoolId);
             });
         }
 
