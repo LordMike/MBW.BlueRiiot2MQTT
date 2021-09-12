@@ -49,7 +49,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
                 {
                     discovery.Name = $"{pool.Name} {_displayName}";
                     discovery.UnitOfMeasurement = _unit;
-                    discovery.StateClass = "measurement";
+                    discovery.StateClass = HassStateClass.Measurement;
                 })
                 .ConfigureAliveService();
         }
