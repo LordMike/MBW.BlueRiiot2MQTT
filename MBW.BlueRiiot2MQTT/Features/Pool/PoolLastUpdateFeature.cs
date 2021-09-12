@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using JetBrains.Annotations;
 using MBW.BlueRiiot2MQTT.Features.Pool.Bases;
 using MBW.BlueRiiot2MQTT.HASS;
 using MBW.BlueRiiot2MQTT.Helpers;
@@ -15,7 +14,6 @@ using MBW.HassMQTT.Interfaces;
 
 namespace MBW.BlueRiiot2MQTT.Features.Pool
 {
-    [UsedImplicitly]
     internal class PoolLastUpdateFeature : LastMeasurementsFeatureBase
     {
         const string AttributeMeasurement = "measurement";

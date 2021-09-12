@@ -1,10 +1,8 @@
-﻿using JetBrains.Annotations;
-using MBW.Client.BlueRiiotApi.Objects;
+﻿using MBW.Client.BlueRiiotApi.Objects;
 using MBW.HassMQTT;
 
 namespace MBW.BlueRiiot2MQTT.Features
 {
-    [UsedImplicitly]
     internal abstract class FeatureUpdaterBaseTyped<T> : FeatureUpdaterBase where T : class
     {
         protected FeatureUpdaterBaseTyped(HassMqttManager hassMqttManager)

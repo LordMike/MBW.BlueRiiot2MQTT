@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using Humanizer;
-using JetBrains.Annotations;
 using MBW.BlueRiiot2MQTT.HASS;
 using MBW.BlueRiiot2MQTT.Helpers;
 using MBW.Client.BlueRiiotApi.Objects;
@@ -14,7 +13,6 @@ using MBW.HassMQTT.Interfaces;
 
 namespace MBW.BlueRiiot2MQTT.Features.BlueDevice
 {
-    [UsedImplicitly]
     internal class BlueDeviceFeature : FeatureUpdaterBaseTyped<SwimmingPoolDevice>
     {
         public BlueDeviceFeature(HassMqttManager hassMqttManager) : base(hassMqttManager)

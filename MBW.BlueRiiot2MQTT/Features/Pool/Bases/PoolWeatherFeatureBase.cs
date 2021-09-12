@@ -1,5 +1,4 @@
-﻿using JetBrains.Annotations;
-using MBW.BlueRiiot2MQTT.HASS;
+﻿using MBW.BlueRiiot2MQTT.HASS;
 using MBW.BlueRiiot2MQTT.Helpers;
 using MBW.Client.BlueRiiotApi.Objects;
 using MBW.HassMQTT;
@@ -53,7 +52,6 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool.Bases
 
         protected abstract void Update(ISensorContainer sensor, SwimmingPool pool, SwimmingPoolWeather obj);
         
-        [UsedImplicitly]
         internal class PoolWeatherTempFeature : PoolWeatherFeatureBase
         {
             public PoolWeatherTempFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Weather forecast Temperature", "weather_temp", "°C", HassSensorDeviceClass.Temperature)
@@ -69,7 +67,6 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool.Bases
             }
         }
         
-        [UsedImplicitly]
         internal class PoolWeatherUvFeature : PoolWeatherFeatureBase
         {
             public PoolWeatherUvFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Weather forecast UV index", "weather_uv", "UV index")
@@ -82,7 +79,6 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool.Bases
             }
         }
         
-        [UsedImplicitly]
         internal class PoolWeatherFeature : PoolWeatherFeatureBase
         {
             public PoolWeatherFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Weather forecast", "weather", null)

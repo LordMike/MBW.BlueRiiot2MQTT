@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using JetBrains.Annotations;
 using MBW.BlueRiiot2MQTT.HASS;
 using MBW.BlueRiiot2MQTT.Helpers;
 using MBW.Client.BlueRiiotApi.Objects;
@@ -12,7 +11,6 @@ using MBW.HassMQTT.Interfaces;
 
 namespace MBW.BlueRiiot2MQTT.Features.Pool
 {
-    [UsedImplicitly]
     internal class PoolPumpFeature : FeatureUpdaterBaseTyped<SwimmingPool>
     {
         const string TimeFormat = @"hh\:mm";

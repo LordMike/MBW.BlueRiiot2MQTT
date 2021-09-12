@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using JetBrains.Annotations;
 using MBW.BlueRiiot2MQTT.Helpers;
 using MBW.Client.BlueRiiotApi.Objects;
 using MBW.Client.BlueRiiotApi.RequestsResponses;
@@ -8,7 +7,6 @@ using MBW.HassMQTT;
 
 namespace MBW.BlueRiiot2MQTT.Features.Pool.Bases
 {
-    [UsedImplicitly]
     internal abstract class LastMeasurementsFeatureBase : FeatureUpdaterBaseTyped<List<SwimmingPoolLastMeasurementsGetResponse>>
     {
         protected LastMeasurementsFeatureBase(HassMqttManager hassMqttManager) : base(hassMqttManager)

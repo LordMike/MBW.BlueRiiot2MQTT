@@ -4,7 +4,7 @@ using MBW.HassMQTT;
 
 namespace MBW.BlueRiiot2MQTT.Features
 {
-    [UsedImplicitly]
+    [UsedImplicitly(ImplicitUseTargetFlags.WithInheritors)]
     internal abstract class FeatureUpdaterBase
     {
         protected HassMqttManager HassMqttManager { get; }
