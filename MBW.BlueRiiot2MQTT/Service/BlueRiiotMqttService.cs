@@ -108,8 +108,10 @@ namespace MBW.BlueRiiot2MQTT.Service
                 .ConfigureTopics(HassTopicKind.State, HassTopicKind.JsonAttributes)
                 .ConfigureDevice(device =>
                 {
+                    if (!device.Identifiers.Contains(HassUniqueIdBuilder.GetSystemDeviceId()))
+                        device.Identifiers.Add(HassUniqueIdBuilder.GetSystemDeviceId());
+
                     device.Name = "BlueRiiot2MQTT";
-                    device.Identifiers.Add(HassUniqueIdBuilder.GetSystemDeviceId());
                     device.SwVersion = typeof(Program).Assembly.GetName().Version.ToString(3);
                 })
                 .ConfigureDiscovery(discovery =>

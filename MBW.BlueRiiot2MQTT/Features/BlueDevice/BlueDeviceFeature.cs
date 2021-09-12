@@ -34,7 +34,9 @@ namespace MBW.BlueRiiot2MQTT.Features.BlueDevice
 
             SensorExtensions.DeviceConfigure deviceConfigure = device =>
             {
-                device.Identifiers.Add(deviceId);
+                if (!device.Identifiers.Contains(deviceId))
+                    device.Identifiers.Add(deviceId);
+
                 device.Name = deviceName;
                 device.SwVersion = data.BlueDevice.FwVersionPsoc;
                 device.Manufacturer = "Blue Riiot";

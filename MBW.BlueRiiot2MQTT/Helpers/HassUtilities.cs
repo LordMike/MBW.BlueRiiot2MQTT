@@ -11,8 +11,10 @@ namespace MBW.BlueRiiot2MQTT.Helpers
         {
             return sensor.ConfigureDevice(device =>
             {
+                if (!device.Identifiers.Contains(pool.SwimmingPoolId))
+                    device.Identifiers.Add(pool.SwimmingPoolId);
+
                 device.Name = pool.Name;
-                device.Identifiers.Add(pool.SwimmingPoolId);
             });
         }
 
