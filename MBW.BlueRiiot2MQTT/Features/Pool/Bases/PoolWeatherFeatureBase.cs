@@ -27,7 +27,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool.Bases
 
         protected sealed override void CreateSensor(SwimmingPool pool, SwimmingPoolWeather obj)
         {
-            IDiscoveryDocumentBuilder<MqttSensor> builder = HassMqttManager.ConfigureSensor<MqttSensor>(HassUniqueIdBuilder.GetPoolDeviceId(pool), _measurement)
+            HassMqttManager.ConfigureSensor<MqttSensor>(HassUniqueIdBuilder.GetPoolDeviceId(pool), _measurement)
                 .ConfigureTopics(HassTopicKind.State, HassTopicKind.JsonAttributes)
                 .SetHassPoolProperties(pool)
                 .ConfigureDiscovery(discovery =>
@@ -37,11 +37,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool.Bases
                     discovery.UnitOfMeasurement = _unit;
                 })
                 .ConfigureAliveService();
-
-            ConfigureSensorInternal(builder);
         }
-
-        protected virtual void ConfigureSensorInternal(IDiscoveryDocumentBuilder<MqttSensor> builder) { }
 
         protected sealed override void UpdateInternal(SwimmingPool pool, SwimmingPoolWeather obj)
         {
@@ -69,45 +65,6 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool.Bases
 
                 sensor.SetValue(HassTopicKind.State, obj.TemperatureCurrent);
             }
-
-            protected override void ConfigureSensorInternal(IDiscoveryDocumentBuilder<MqttSensor> builder)
-            {
-                builder.ConfigureDiscovery(s => s.StateClass = "measurement");
-            }
-        }
-
-        internal class PoolWeatherTempMinFeature : PoolWeatherFeatureBase
-        {
-            public PoolWeatherTempMinFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Weather forecast Temperature (min)", "weather_temp_min", "°C", HassSensorDeviceClass.Temperature)
-            {
-            }
-
-            protected override void Update(ISensorContainer sensor, SwimmingPool pool, SwimmingPoolWeather obj)
-            {
-                sensor.SetValue(HassTopicKind.State, obj.TemperatureMin);
-            }
-
-            protected override void ConfigureSensorInternal(IDiscoveryDocumentBuilder<MqttSensor> builder)
-            {
-                builder.ConfigureDiscovery(s => s.StateClass = "measurement");
-            }
-        }
-
-        internal class PoolWeatherTempMaxFeature : PoolWeatherFeatureBase
-        {
-            public PoolWeatherTempMaxFeature(HassMqttManager hassMqttManager) : base(hassMqttManager, "Weather forecast Temperature (max)", "weather_temp_max", "°C", HassSensorDeviceClass.Temperature)
-            {
-            }
-
-            protected override void Update(ISensorContainer sensor, SwimmingPool pool, SwimmingPoolWeather obj)
-            {
-                sensor.SetValue(HassTopicKind.State, obj.TemperatureMax);
-            }
-
-            protected override void ConfigureSensorInternal(IDiscoveryDocumentBuilder<MqttSensor> builder)
-            {
-                builder.ConfigureDiscovery(s => s.StateClass = "measurement");
-            }
         }
 
         internal class PoolWeatherUvFeature : PoolWeatherFeatureBase
@@ -119,11 +76,6 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool.Bases
             protected override void Update(ISensorContainer sensor, SwimmingPool pool, SwimmingPoolWeather obj)
             {
                 sensor.SetValue(HassTopicKind.State, obj.UvCurrent);
-            }
-
-            protected override void ConfigureSensorInternal(IDiscoveryDocumentBuilder<MqttSensor> builder)
-            {
-                builder.ConfigureDiscovery(s => s.StateClass = "measurement");
             }
         }
 
