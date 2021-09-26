@@ -19,7 +19,7 @@ _This project is not affiliated with or endorsed by Blue Riiot._
   * Notifies when actions need to be done (use the Blue Riiot app to get more details on steps)
   * Pump schedules, also has commands to set pump schedules
 * Ability to cope with metrics databases, by reporting unchanged values
-* Creates sensors for each Blue device, with their battery status
+* Creates sensors for each Blue device, reporting available details
 * Automatically polls closely to the Blue device's reportings, to get 'live' data
 * Ability to send commands to BlueRiiot2MQTT to interact with BlueRiiot.
 
