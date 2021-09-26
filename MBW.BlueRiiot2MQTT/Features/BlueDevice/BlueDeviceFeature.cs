@@ -51,16 +51,9 @@ namespace MBW.BlueRiiot2MQTT.Features.BlueDevice
                 })
                 .ConfigureAliveService();
 
-            HassMqttManager.ConfigureSensor<MqttSensor>(deviceId, "battery")
-                .ConfigureTopics(HassTopicKind.State, HassTopicKind.JsonAttributes)
-                .ConfigureDevice(deviceConfigure)
-                .ConfigureDiscovery(discovery =>
-                {
-                    discovery.DeviceClass = HassSensorDeviceClass.Battery;
-                    discovery.Name = $"{namePrefix} Battery";
-                    discovery.UnitOfMeasurement = "%";
-                })
-                .ConfigureAliveService();
+            // Battery was previously done from "BatteryLow" API response
+            // But this value is nonfunctional (https://github.com/LordMike/MBW.BlueRiiot2MQTT/issues/62#issuecomment-925086790)
+            HassMqttManager.RemoveSensor<MqttSensor>(deviceId, "battery");
 
             HassMqttManager.ConfigureSensor<MqttSensor>(deviceId, "status")
                 .ConfigureTopics(HassTopicKind.State, HassTopicKind.JsonAttributes)
@@ -77,9 +70,6 @@ namespace MBW.BlueRiiot2MQTT.Features.BlueDevice
             string deviceId = HassUniqueIdBuilder.GetBlueDeviceId(data);
             ISensorContainer deviceSensor = HassMqttManager
                 .GetSensor(deviceId, "device")
-                .SetPoolAttributes(pool);
-            ISensorContainer batterySensor = HassMqttManager
-                .GetSensor(deviceId, "battery")
                 .SetPoolAttributes(pool);
             ISensorContainer statusSensor = HassMqttManager
                 .GetSensor(deviceId, "status")
@@ -101,12 +91,6 @@ namespace MBW.BlueRiiot2MQTT.Features.BlueDevice
             deviceSensor.SetAttribute("wake_interval", data.BlueDevice.WakePeriod);
             deviceSensor.SetAttribute("firmware", data.BlueDevice.FwVersionPsoc);
             deviceSensor.SetAttribute("firmware_installed", data.BlueDevice.FwVersionHistory?.OrderByDescending(s => s.Timestamp).Select(s => s.Timestamp).FirstOrDefault());
-
-            // Battery
-            if (data.BlueDevice.BatteryLow)
-                batterySensor.SetValue(HassTopicKind.State, 10);
-            else
-                batterySensor.SetValue(HassTopicKind.State, 100);
 
             // Status (awake, sleeping, ..)
             statusSensor.SetValue(HassTopicKind.State, data.BlueDevice.SleepState);

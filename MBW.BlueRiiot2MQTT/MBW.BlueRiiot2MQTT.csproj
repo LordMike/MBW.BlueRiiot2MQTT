@@ -13,7 +13,7 @@
     <PackageReference Include="Enums.NET" Version="3.0.3" />
     <PackageReference Include="Humanizer.Core" Version="2.8.26" />
     <PackageReference Include="MBW.Client.BlueRiiotAPI" Version="0.8.5" />
-    <PackageReference Include="MBW.HassMQTT.CommonServices" Version="3.3.2" />
+    <PackageReference Include="MBW.HassMQTT.CommonServices" Version="3.4.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.KeyPerFile" Version="3.1.6" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.6" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.6" />
