@@ -6,7 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AwsSignatureVersion4" Version="4.0.0" />
     <PackageReference Include="Enums.NET" Version="4.0.0" />
     <PackageReference Include="Humanizer.Core" Version="2.14.1" />
     <PackageReference Include="MBW.Client.BlueRiiotAPI" Version="0.8.5" />
