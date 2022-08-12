@@ -4,10 +4,10 @@ WORKDIR /src
 
 COPY . .
 WORKDIR "/src/MBW.BlueRiiot2MQTT/"
-RUN dotnet publish -c release -o /app -r linux-musl-x64 --self-contained false
+RUN dotnet publish -c release -o /app
 
 # Final
 FROM mcr.microsoft.com/dotnet/runtime:6.0-focal-amd64
 WORKDIR /app
 COPY --from=build /app .
-ENTRYPOINT ["./MBW.BlueRiiot2MQTT"]
+ENTRYPOINT ["dotnet", "MBW.BlueRiiot2MQTT.dll"]
