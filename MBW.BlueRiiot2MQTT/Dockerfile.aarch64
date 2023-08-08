@@ -7,7 +7,7 @@ WORKDIR "/src/MBW.BlueRiiot2MQTT/"
 RUN dotnet publish -c release -o /app
 
 # Final
-FROM mcr.microsoft.com/dotnet/runtime:7.0-focal-arm64v8
+FROM mcr.microsoft.com/dotnet/runtime:7.0-jammy-arm64v8
 WORKDIR /app
 COPY --from=build /app .
 ENTRYPOINT ["dotnet", "MBW.BlueRiiot2MQTT.dll"]
