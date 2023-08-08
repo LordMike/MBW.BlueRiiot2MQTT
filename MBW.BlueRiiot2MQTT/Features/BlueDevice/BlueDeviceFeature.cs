@@ -47,7 +47,7 @@ namespace MBW.BlueRiiot2MQTT.Features.BlueDevice
                 .ConfigureDiscovery(discovery =>
                 {
                     discovery.DeviceClass = HassSensorDeviceClass.Timestamp;
-                    discovery.Name = $"{namePrefix} Last Contact";
+                    discovery.Name = "Last Contact";
                 })
                 .ConfigureAliveService();
 
@@ -60,7 +60,7 @@ namespace MBW.BlueRiiot2MQTT.Features.BlueDevice
                 .ConfigureDevice(deviceConfigure)
                 .ConfigureDiscovery(discovery =>
                 {
-                    discovery.Name = $"{namePrefix} Status";
+                    discovery.Name = "Status";
                 })
                 .ConfigureAliveService();
         }

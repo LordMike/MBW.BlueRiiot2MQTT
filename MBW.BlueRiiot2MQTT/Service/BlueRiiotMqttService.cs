@@ -116,7 +116,7 @@ namespace MBW.BlueRiiot2MQTT.Service
                 })
                 .ConfigureDiscovery(discovery =>
                 {
-                    discovery.Name = "BlueRiiot2MQTT API Operational";
+                    discovery.Name = "API Operational";
                     discovery.DeviceClass = HassBinarySensorDeviceClass.Problem;
 
                     discovery.PayloadOn = ProblemMessage;

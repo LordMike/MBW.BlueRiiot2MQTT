@@ -32,7 +32,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool.Bases
                 .SetHassPoolProperties(pool)
                 .ConfigureDiscovery(discovery =>
                 {
-                    discovery.Name = $"{pool.Name} {_displayName}";
+                    discovery.Name = _displayName;
                     discovery.DeviceClass = _deviceClass;
                     discovery.UnitOfMeasurement = _unit;
                 })

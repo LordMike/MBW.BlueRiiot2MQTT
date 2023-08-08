@@ -45,7 +45,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
                 .SetHassPoolProperties(pool)
                 .ConfigureDiscovery(discovery =>
                 {
-                    discovery.Name = $"{pool.Name} {_displayName}";
+                    discovery.Name = _displayName;
                 })
                 .ConfigureAliveService();
         }

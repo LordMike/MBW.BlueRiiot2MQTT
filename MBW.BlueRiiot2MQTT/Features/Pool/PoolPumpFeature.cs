@@ -26,7 +26,7 @@ namespace MBW.BlueRiiot2MQTT.Features.Pool
                 .SetHassPoolProperties(pool)
                 .ConfigureDiscovery(discovery =>
                 {
-                    discovery.Name = $"{pool.Name} Pump Schedule";
+                    discovery.Name = "Pump Schedule";
                 })
                 .ConfigureAliveService();
         }
