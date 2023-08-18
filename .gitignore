@@ -1,8 +1,8 @@
 .vs/
+.idea/
 bin/
 obj/
 Build/
-.idea/
 
 # Files for local dev
 *.user
