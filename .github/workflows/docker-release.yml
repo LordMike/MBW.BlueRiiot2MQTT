@@ -9,12 +9,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Prep docker experimentals
-      run: echo "DOCKER_CLI_EXPERIMENTAL=enabled" >> $GITHUB_ENV
-    
-    - name: Prep GIT_TAG
-      run: echo "GIT_TAG=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-    
     - uses: actions/checkout@v2
     
     - name: Dotenv Action
@@ -22,44 +16,23 @@ jobs:
 
     - name: Test
       run: "[ -f .ci-skip-tests ] && echo 'Skipping tests' || dotnet test --configuration Release"
-  
-    - name: Build
-      run: |
-        [ -f "${DOCKER_DOCKERFILE}.amd64" ] && docker build -f ${DOCKER_DOCKERFILE}.amd64 -t ${DOCKER_TAG}:amd64-latest .
-        [ -f "${DOCKER_DOCKERFILE}.armv7" ] && docker build -f ${DOCKER_DOCKERFILE}.armv7 -t ${DOCKER_TAG}:armv7-latest .
-        [ -f "${DOCKER_DOCKERFILE}.aarch64" ] && docker build -f ${DOCKER_DOCKERFILE}.aarch64 -t ${DOCKER_TAG}:aarch64-latest .
-    
-    - name: Push base images to docker hub
-      run: |
-        echo ${{ secrets.DOCKER_KEY }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-        
-        [ -f "${DOCKER_DOCKERFILE}.amd64" ] && docker tag ${DOCKER_TAG}:amd64-latest ${DOCKER_TAG}:amd64-$GIT_TAG
-        [ -f "${DOCKER_DOCKERFILE}.armv7" ] && docker tag ${DOCKER_TAG}:armv7-latest ${DOCKER_TAG}:armv7-$GIT_TAG
-        [ -f "${DOCKER_DOCKERFILE}.aarch64" ] && docker tag ${DOCKER_TAG}:aarch64-latest ${DOCKER_TAG}:aarch64-$GIT_TAG
-        
-        [ -f "${DOCKER_DOCKERFILE}.amd64" ] && docker push ${DOCKER_TAG}:amd64-latest
-        [ -f "${DOCKER_DOCKERFILE}.amd64" ] && docker push ${DOCKER_TAG}:amd64-$GIT_TAG
-        [ -f "${DOCKER_DOCKERFILE}.armv7" ] && docker push ${DOCKER_TAG}:armv7-latest
-        [ -f "${DOCKER_DOCKERFILE}.armv7" ] && docker push ${DOCKER_TAG}:armv7-$GIT_TAG
-        [ -f "${DOCKER_DOCKERFILE}.aarch64" ] && docker push ${DOCKER_TAG}:aarch64-latest
-        [ -f "${DOCKER_DOCKERFILE}.aarch64" ] && docker push ${DOCKER_TAG}:aarch64-$GIT_TAG
-      
-    - name: Create manifest images + tag images
-      run: |
-        # Note: Manifests are created from tags from docker.io, so we must push first, then create manifest, then push again
-        PARTS=''
-        [ -f "${DOCKER_DOCKERFILE}.amd64" ] && PARTS="$PARTS ${DOCKER_TAG}:amd64-latest"
-        [ -f "${DOCKER_DOCKERFILE}.armv7" ] && PARTS="$PARTS ${DOCKER_TAG}:armv7-latest"
-        [ -f "${DOCKER_DOCKERFILE}.aarch64" ] && PARTS="$PARTS ${DOCKER_TAG}:aarch64-latest"
-        
-        docker manifest create ${DOCKER_TAG}:latest $PARTS
-        
-        PARTS=''
-        [ -f "${DOCKER_DOCKERFILE}.amd64" ] && PARTS="$PARTS ${DOCKER_TAG}:amd64-$GIT_TAG"
-        [ -f "${DOCKER_DOCKERFILE}.armv7" ] && PARTS="$PARTS ${DOCKER_TAG}:armv7-$GIT_TAG"
-        [ -f "${DOCKER_DOCKERFILE}.aarch64" ] && PARTS="$PARTS ${DOCKER_TAG}:aarch64-$GIT_TAG"
-        
-        docker manifest create ${DOCKER_TAG}:$GIT_TAG $PARTS
-        
-        docker manifest push ${DOCKER_TAG}:latest
-        docker manifest push ${DOCKER_TAG}:$GIT_TAG
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_KEY }}
+
+    - name: Build and push
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        platforms: ${{ env.DOCKER_PLATFORMS }}
+        push: true
+        tags: ${{ env.DOCKER_TAG }}:${{ github.ref_name }},${{ env.DOCKER_TAG }}:latest
+        file: ${{ env.DOCKER_DOCKERFILE }}
