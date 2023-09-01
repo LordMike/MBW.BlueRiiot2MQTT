@@ -1,0 +1,49 @@
+name: Release on Tagged Commits
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      # Allow creating releases
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          # We need all tags to diff past tag and this.
+          # Attempts at fetching just two tags has been futile.
+          fetch-depth: 0
+          
+      #- name: Fetch Second Latest Tag
+      #  run: |
+      #    # Avoid fetching *all* tags but just the one before this one (assuming we're running on a latest tag always)
+      #    SECOND_LATEST_TAG_NAME=$(git ls-remote --tags origin | grep -o 'refs/tags/[vV0-9]*\.[0-9]*\.[0-9]*$' | sort -V | tail -n2 | head -n1 | sed 's/refs\/tags\///')
+      #    git fetch origin tag $SECOND_LATEST_TAG_NAME
+      
+      #- name: Fetch tags
+      #  run: git fetch --depth=1 origin '+refs/tags/*:refs/tags/*'
+
+      - name: Get Previous Tag
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          echo "PREV_TAG=$PREV_TAG" >> $GITHUB_ENV
+      
+      - name: Generate Release Notes
+        run: |
+          COMPARE_LINK="https://github.com/${{ github.repository }}/compare/${{ env.PREV_TAG }}...${{ github.ref_name }}"
+          
+          echo "**Changes Since Last Release:**" > release.md
+          echo "[View changes ${{ env.PREV_TAG }}...${{ github.ref_name }}]($COMPARE_LINK)" >> release.md
+          echo "" >> release.md
+          echo "**Commits:**" >> release.md
+          git log --pretty=format:"- %h: %s" ${{ env.PREV_TAG }}...${{ github.ref_name }} >> release.md
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          bodyFile: release.md
