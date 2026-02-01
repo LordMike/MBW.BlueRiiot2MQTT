@@ -1,0 +1,25 @@
+{
+  "$schema": "https://github.com/LordMike/MBW.Tools.GhStandardContent/spec/StandardContent.json",
+  "meta": {
+    "repo": "LordMike/MBW.BlueRiiot2MQTT",
+    "profiles": [
+      "standardContent",
+      "standardDocker",
+      "standardDotnet",
+      "standardReleases"
+    ],
+    "files": [
+      ".editorconfig",
+      ".gitattributes",
+      ".github/workflows/.dockerignore",
+      ".github/workflows/docker-dev.yml",
+      ".github/workflows/docker-release.yml",
+      ".github/workflows/dotnet.yml",
+      ".github/workflows/generic-build.yml",
+      ".github/workflows/release.yml",
+      ".gitignore",
+      "Directory.Build.props"
+    ],
+    "last_updated": "2026-02-01T15:40:08.8254067+00:00"
+  }
+}
