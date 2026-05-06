@@ -3,6 +3,7 @@
   "meta": {
     "repo": "LordMike/MBW.BlueRiiot2MQTT",
     "profiles": [
+      "hassAddonsRepositoryDispatch",
       "standardContent",
       "standardDocker",
       "standardDotnet",
@@ -16,10 +17,11 @@
       ".github/workflows/docker-release.yml",
       ".github/workflows/dotnet.yml",
       ".github/workflows/generic-build.yml",
+      ".github/workflows/notify-hass-addons.yml",
       ".github/workflows/release.yml",
       ".gitignore",
       "Directory.Build.props"
     ],
-    "last_updated": "2026-02-01T17:06:32.6663221+00:00"
+    "last_updated": "2026-05-06T11:07:25.9241454+00:00"
   }
 }

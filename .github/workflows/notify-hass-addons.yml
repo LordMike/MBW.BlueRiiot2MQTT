@@ -1,0 +1,104 @@
+name: Notify add-on repository
+
+# This publishes the new add-on version into LordMike/hass-addons, which acts as
+# the central Home Assistant add-on registry for my add-ons. The release itself
+# stays in this source repository; hass-addons receives a repository_dispatch and
+# updates its add-on metadata from the published release.
+on:
+  # Manual backfill path. Use this when a release already exists but the registry
+  # dispatch needs to be re-sent, for example after fixing this workflow.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Published release tag to dispatch
+        required: true
+        type: string
+
+  # Human/API release path. This fires when a GitHub Release is published
+  # outside the Release workflow, including a draft release being published
+  # after review.
+  release:
+    types:
+      - published
+
+  # Automated release path. Releases created by the Release workflow use
+  # GITHUB_TOKEN, and GitHub does not trigger release.published workflows from
+  # actions performed with GITHUB_TOKEN. This catches that case after the Release
+  # workflow has pushed the Docker image and created the published release.
+  workflow_run:
+    workflows:
+      - Release
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+env:
+  # Keep these generic so this workflow can be copied to other add-on source
+  # repositories without changing the dispatch implementation below.
+  DISPATCH_TARGET_REPOSITORY: LordMike/hass-addons
+  DISPATCH_EVENT_TYPE: addon-release
+
+jobs:
+  dispatch:
+    name: Dispatch release
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - name: Resolve release
+        id: release
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          elif [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            TAG="${{ github.event.workflow_run.head_branch }}"
+          fi
+
+          # Home Assistant add-on versions must be plain numeric semver, without
+          # the v-prefix that I normally use elsewhere.
+          if ! printf '%s' "$TAG" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Home Assistant add-on release tags must match a.b.c with numeric components, got $TAG"
+            exit 1
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Verify published GitHub Release exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          IS_DRAFT="$(curl -fsSL \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${RELEASE_TAG}" \
+            | jq -r '.draft')"
+
+          if [ "$IS_DRAFT" != "false" ]; then
+            echo "::error::Release $RELEASE_TAG is not published"
+            exit 1
+          fi
+
+      - name: Dispatch to hass-addons
+        env:
+          # This token must have permission to POST repository_dispatch events to
+          # the central add-on registry repository.
+          DISPATCH_TOKEN: ${{ secrets.HASS_ADDONS_REPOSITORY_DISPATCH_TOKEN }}
+          DISPATCH_SOURCE_REPOSITORY: ${{ github.repository }}
+          DISPATCH_RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          # The target workflow fetches release notes itself from source_repo and
+          # tag, so the sender only sends the immutable release identity.
+          curl -fsSL -X POST \
+            -H "Authorization: Bearer $DISPATCH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${DISPATCH_TARGET_REPOSITORY}/dispatches" \
+            -d "$(jq -nc \
+              --arg event_type "$DISPATCH_EVENT_TYPE" \
+              --arg source_repo "$DISPATCH_SOURCE_REPOSITORY" \
+              --arg tag "$DISPATCH_RELEASE_TAG" \
+              '{event_type:$event_type,client_payload:{source_repo:$source_repo,tag:$tag}}')"
