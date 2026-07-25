@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <IsPackable>false</IsPackable>
     <TargetFramework>$(DefaultTargetFramework)</TargetFramework>
   </PropertyGroup>
 
