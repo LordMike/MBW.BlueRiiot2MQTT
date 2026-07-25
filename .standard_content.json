@@ -1,27 +1,28 @@
 {
-  "$schema": "https://github.com/LordMike/MBW.Tools.GhStandardContent/spec/StandardContent.json",
+  "$schema": "https://raw.githubusercontent.com/LordMike/MBW.Tools.GhStandardContent/master/spec/StandardContent.json",
   "meta": {
     "repo": "LordMike/MBW.BlueRiiot2MQTT",
     "profiles": [
-      "hassAddonsRepositoryDispatch",
+      "hassAddonsDeploy",
+      "standardCI",
       "standardContent",
-      "standardDocker",
-      "standardDotnet",
-      "standardReleases"
+      "standardDotnetBuild"
     ],
     "files": [
       ".editorconfig",
       ".gitattributes",
-      ".github/workflows/.dockerignore",
-      ".github/workflows/docker-dev.yml",
-      ".github/workflows/docker-release.yml",
-      ".github/workflows/dotnet.yml",
-      ".github/workflows/generic-build.yml",
-      ".github/workflows/notify-hass-addons.yml",
-      ".github/workflows/release.yml",
+      ".github/actions/build/action.yml",
+      ".github/actions/collect_publishables/action.yml",
+      ".github/actions/initialize_ci/action.yml",
+      ".github/actions/publish_docker/action.yml",
+      ".github/actions/publish_github_release/action.yml",
+      ".github/actions/publish_nuget/action.yml",
+      ".github/readme.md",
+      ".github/workflows/ci.yml",
+      ".github/workflows/deploy.yml",
       ".gitignore",
       "Directory.Build.props"
     ],
-    "last_updated": "2026-05-06T11:07:25.9241454+00:00"
+    "last_updated": "2026-07-25T21:00:37.6649307\u002B00:00"
   }
 }
