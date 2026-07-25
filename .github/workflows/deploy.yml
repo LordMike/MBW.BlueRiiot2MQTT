@@ -1,0 +1,67 @@
+# This file is centrally managed; local edits may be lost.
+
+name: Deploy Home Assistant add-on
+
+# Contract:
+# - CI calls this after all applicable SemVer-tag publishing succeeds.
+# - Only exact stable numeric tags dispatch an add-on release.
+# - The dispatch token is scoped to this reusable deployment workflow.
+
+on:
+  workflow_call:
+    inputs:
+      release-tag:
+        description: Original release tag, including any v prefix
+        required: true
+        type: string
+      version:
+        description: Normalized SemVer version
+        required: true
+        type: string
+      is-prerelease:
+        description: Whether the version is a prerelease
+        required: true
+        type: string
+      is-plain-version:
+        description: Whether the tag is an exact stable numeric version
+        required: true
+        type: string
+    secrets:
+      HASS_ADDONS_REPOSITORY_DISPATCH_TOKEN:
+        required: true
+
+jobs:
+  notify_hass_addons:
+    name: Notify Home Assistant add-on repository
+    if: inputs.is-prerelease == 'false' && inputs.is-plain-version == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Dispatch released add-on version
+        shell: bash
+        env:
+          DISPATCH_TOKEN: ${{ secrets.HASS_ADDONS_REPOSITORY_DISPATCH_TOKEN }}
+          DISPATCH_RELEASE_TAG: ${{ inputs.release-tag }}
+          DISPATCH_SOURCE_REPOSITORY: ${{ github.repository }}
+          DISPATCH_TARGET_REPOSITORY: LordMike/hass-addons
+          DISPATCH_EVENT_TYPE: addon-release
+        run: |
+          set -euo pipefail
+
+          if [ -z "$DISPATCH_TOKEN" ]; then
+            echo '::error::HASS_ADDONS_REPOSITORY_DISPATCH_TOKEN is required for add-on notification.'
+            exit 1
+          fi
+
+          curl -fsSL -X POST \
+            -H "Authorization: Bearer $DISPATCH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'X-GitHub-Api-Version: 2026-03-10' \
+            "https://api.github.com/repos/${DISPATCH_TARGET_REPOSITORY}/dispatches" \
+            -d "$(jq -nc \
+              --arg event_type "$DISPATCH_EVENT_TYPE" \
+              --arg source_repo "$DISPATCH_SOURCE_REPOSITORY" \
+              --arg tag "$DISPATCH_RELEASE_TAG" \
+              '{event_type:$event_type,client_payload:{source_repo:$source_repo,tag:$tag}}')"
