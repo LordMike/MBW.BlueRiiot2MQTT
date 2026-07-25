@@ -7,6 +7,7 @@ description: Build and publish every Docker image described by CI metadata
 # - Image definitions are read only from .artifacts/docker-images.json.
 # - Each image is built exactly once in this publishing job.
 # - Development refs publish :dev; releases publish :<version> and stable :latest.
+# - Every build receives BUILD_VERSION=dev or the normalized release version.
 # - Registry credentials are supplied only by the invoking publishing job.
 
 inputs:
@@ -76,8 +77,10 @@ runs:
 
           tag_args=()
           if [ "$PUBLISH_TARGET" = development ]; then
+            build_version=dev
             tag_args+=(--tag "$image:dev")
           else
+            build_version="$VERSION"
             tag_args+=(--tag "$image:$VERSION")
             if [ "$IS_PRERELEASE" = false ]; then
               tag_args+=(--tag "$image:latest")
@@ -88,6 +91,7 @@ runs:
             --file "$dockerfile" \
             --platform "$platforms" \
             "${tag_args[@]}" \
+            --build-arg "BUILD_VERSION=$build_version" \
             --cache-from "type=gha,scope=$cache_scope" \
             --cache-to "type=gha,mode=max,scope=$cache_scope" \
             --push \
